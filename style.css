@@ -1,0 +1,328 @@
+/* Global reset and base typography */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top left, #162447, #1b1b2f 45%, #0f172a 80%);
+  color: #e5e7eb;
+  min-height: 100vh;
+}
+
+/* Layout */
+#game-root {
+  max-width: 1200px;
+  margin: 24px auto;
+  padding: 16px;
+}
+
+.app-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.app-header h1 {
+  font-size: 2.2rem;
+  letter-spacing: 0.05em;
+}
+
+.subtitle {
+  margin-top: 8px;
+  color: #9ca3af;
+  font-size: 0.95rem;
+}
+
+.app-layout {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 16px;
+}
+
+/* Stats panel */
+#stats-panel {
+  background: linear-gradient(180deg, rgba(15,23,42,0.95), rgba(15,23,42,0.8));
+  border-radius: 16px;
+  padding: 16px 18px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  border: 1px solid rgba(148,163,184,0.25);
+}
+
+#stats-panel h2 {
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+  color: #f9fafb;
+}
+
+.stat-group {
+  margin-bottom: 12px;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+  color: #d1d5db;
+}
+
+.stat-bar-outer {
+  background: rgba(15,23,42,1);
+  border-radius: 999px;
+  overflow: hidden;
+  height: 12px;
+  border: 1px solid rgba(55,65,81,0.9);
+}
+
+.stat-bar {
+  height: 100%;
+  width: 0%;
+  transition: width 0.4s ease;
+}
+
+/* Colourful stat bars */
+.stat-bar.readiness {
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+}
+
+.stat-bar.public {
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+.stat-bar.trust {
+  background: linear-gradient(90deg, #f97316, #fb923c);
+}
+
+.stat-bar.allies {
+  background: linear-gradient(90deg, #6366f1, #a855f7);
+}
+
+.stat-bar.czech {
+  background: linear-gradient(90deg, #ef4444, #f97373);
+}
+
+.stat-value {
+  display: block;
+  font-size: 0.8rem;
+  margin-top: 2px;
+  text-align: right;
+  color: #9ca3af;
+}
+
+/* Restart button */
+.restart-btn {
+  margin-top: 8px;
+  width: 100%;
+  border-radius: 999px;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  background: radial-gradient(circle at top left, #f97316, #e11d48);
+  color: #f9fafb;
+  font-weight: 600;
+  font-size: 0.9rem;
+  box-shadow: 0 6px 15px rgba(248,113,113,0.5);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.1s ease;
+}
+
+.restart-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(248,113,113,0.7);
+}
+
+/* Game panel */
+.game-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Event card */
+#event-card {
+  background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,64,175,0.9));
+  border-radius: 18px;
+  padding: 16px 18px;
+  box-shadow: 0 0 24px rgba(15,23,42,0.9);
+  border: 1px solid rgba(59,130,246,0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+#event-card::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(56,189,248,0.16) 0, transparent 50%),
+    radial-gradient(circle at 90% 60%, rgba(244,114,182,0.18) 0, transparent 50%);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+#event-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.event-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.event-year {
+  font-size: 0.85rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #a5b4fc;
+}
+
+.event-title {
+  margin-top: 2px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+/* Tags */
+.event-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.tag-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid rgba(148,163,184,0.5);
+  color: #e5e7eb;
+  background: rgba(15,23,42,0.6);
+}
+
+/* Description and choices */
+.event-description {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: #e5e7eb;
+}
+
+.event-description strong {
+  color: #f9fafb;
+}
+
+.choice-container {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.choice-btn {
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(148,163,184,0.6);
+  background: rgba(15,23,42,0.9);
+  color: #e5e7eb;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.choice-btn span.choice-main {
+  font-weight: 600;
+}
+
+.choice-btn span.choice-sub {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.choice-btn:hover {
+  background: radial-gradient(circle at top left, rgba(59,130,246,0.5), rgba(15,23,42,0.95));
+  border-color: rgba(129,140,248,0.9);
+  box-shadow: 0 4px 12px rgba(37,99,235,0.6);
+  transform: translateY(-1px);
+}
+
+/* Log panel */
+#log-panel {
+  background: rgba(15,23,42,0.9);
+  border-radius: 16px;
+  padding: 12px 14px;
+  border: 1px solid rgba(75,85,99,0.9);
+  box-shadow: 0 0 16px rgba(0,0,0,0.7);
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+#log-panel h2 {
+  font-size: 1rem;
+  margin-bottom: 6px;
+  color: #f3f4f6;
+}
+
+.log-entries {
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: #d1d5db;
+}
+
+.log-entry {
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed rgba(55,65,81,0.7);
+}
+
+.log-entry:last-child {
+  border-bottom: none;
+}
+
+.log-entry .log-time {
+  color: #9ca3af;
+  font-size: 0.7rem;
+}
+
+/* Ending style */
+.ending {
+  border: 1px solid rgba(251,191,36,0.9);
+  background: radial-gradient(circle at top left, rgba(251,191,36,0.25), rgba(15,23,42,0.95));
+}
+
+.ending-title {
+  color: #fde68a;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+/* Responsive tweaks */
+@media (max-width: 900px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+
+  #stats-panel {
+    order: 2;
+  }
+
+  .game-panel {
+    order: 1;
+  }
+}

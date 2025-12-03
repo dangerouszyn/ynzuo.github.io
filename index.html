@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Chamberlain Simmulation</title>
+    <link rel="stylesheet" href="./style.css">
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chamberlain’s Dilemma: The Road to Munich</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="game-root">
+    <header class="app-header">
+      <h1>Chamberlain’s Dilemma</h1>
+      <p class="subtitle">
+        A decision-based simulation of British information and policy choices before the Munich Agreement, 1937–1938.
+      </p>
+    </header>
+
+    <main class="app-layout">
+      <!-- LEFT: STATS PANEL -->
+      <aside id="stats-panel">
+        <h2>Strategic Indicators</h2>
+
+        <div class="stat-group">
+          <span class="stat-label">Military Readiness</span>
+          <div class="stat-bar-outer">
+            <div id="stat-readiness-bar" class="stat-bar readiness"></div>
+          </div>
+          <span id="stat-readiness-value" class="stat-value"></span>
+        </div>
+
+        <div class="stat-group">
+          <span class="stat-label">Public Support for Firmness</span>
+          <div class="stat-bar-outer">
+            <div id="stat-public-bar" class="stat-bar public"></div>
+          </div>
+          <span id="stat-public-value" class="stat-value"></span>
+        </div>
+
+        <div class="stat-group">
+          <span class="stat-label">Public Opposition to War</span>
+          <div class="stat-bar-outer">
+            <div id="stat-trust-bar" class="stat-bar trust"></div>
+          </div>
+          <span id="stat-trust-value" class="stat-value"></span>
+        </div>
+
+        <div class="stat-group">
+          <span class="stat-label">Confidence in Allies (France & Others)</span>
+          <div class="stat-bar-outer">
+            <div id="stat-allies-bar" class="stat-bar allies"></div>
+          </div>
+          <span id="stat-allies-value" class="stat-value"></span>
+        </div>
+
+        <div class="stat-group">
+          <span class="stat-label">Security of Czechoslovakia</span>
+          <div class="stat-bar-outer">
+            <div id="stat-czech-bar" class="stat-bar czech"></div>
+          </div>
+          <span id="stat-czech-value" class="stat-value"></span>
+        </div>
+
+        <button id="restart-btn" class="restart-btn">Restart Simulation</button>
+      </aside>
+
+      <!-- RIGHT: EVENT CARD + LOG -->
+      <section class="game-panel">
+        <section id="event-card">
+          <div class="event-header">
+            <div class="event-meta">
+              <span id="event-year" class="event-year"></span>
+              <span id="event-title" class="event-title"></span>
+            </div>
+            <div id="event-tags" class="event-tags"></div>
+          </div>
+
+          <div id="event-description" class="event-description"></div>
+
+          <div id="choice-container" class="choice-container">
+            <!-- Choices injected by JS -->
+          </div>
+        </section>
+
+        <section id="log-panel">
+          <h2>Cabinet & Diary Record</h2>
+          <div id="log-entries" class="log-entries">
+            <!-- Log lines injected by JS -->
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
+    <script  src="./script.js"></script>
+
+  </body>
+  
+</html>
