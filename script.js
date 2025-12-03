@@ -1,55 +1,64 @@
 // Basic game state [data structure tracking current situation]
 const gameState = {
   currentNodeId: "intro_1937",
+
   stats: {
-    readiness: 45,   // military preparedness
-    public: 40,      // public support for firmness
-    trust: 45,       // trust in Hitler's assurances
-    allies: 50,      // confidence in France & others
-    czech: 55        // security of Czechoslovakia
+    readiness: 45,
+    public: 40,
+    trust: 65,
+    allies: 50,
+    czech: 55
   },
+
   turn: 0,
-  history: []
+  history: [],
+
+  // 🔥 Insert this new section
+  flags: {
+    exploredUSSR: false   // Tracks whether the player previously contacted the USSR
+  }
 };
-
-function calculateDeterrenceProbability(stats) {
-  let score =
-      stats.readiness * 0.50 +
-      stats.allies    * 0.20 +
-      (stats.public - 50) * 0.20 +
-      stats.czech     * 0.30 +
-      (50 - stats.trust) * 0.2;
-
-  return Math.max(0, Math.min(100, Math.round(score)));
-}
 
 function applyPostEndingConsequences(endingId, stats) {
   if (endingId === "ending_appeasement") {
     // Historical consequences (1939 trajectory)
     stats.czech = 0;                 // Complete dismemberment
-    stats.readiness = clamp(stats.readiness + 25, 0, 100);  
+    stats.readiness = clamp(stats.readiness + 30, 0, 100);  
     stats.trust = clamp(stats.trust - 40, 0, 100);          
-    stats.allies = clamp(stats.allies + 5, 0, 100);        
-    stats.public = clamp(stats.public + 20, 0, 100);        
+    stats.allies = clamp(stats.allies - 10, 0, 100);        
+    stats.public = clamp(stats.public + 25, 0, 100);        
   }
 
   if (endingId === "ending_conditional") {
     // Partial appeasement → early war model
-    stats.czech = clamp(stats.czech - 20, 0, 100);  // Prague loses fortification
+    stats.czech = clamp(stats.czech, 0, 100);  // Prague loses fortification
     stats.readiness = clamp(stats.readiness + 10, 0, 100);
     stats.trust = clamp(stats.trust - 25, 0, 100);  
     stats.allies = clamp(stats.allies + 10, 0, 100); 
+    stats.public = clamp(stats.public + 15, 0, 100);   
   }
 
   if (endingId === "ending_confrontation") {
     // Early confrontation already assumed
-    stats.readiness = clamp(stats.readiness - 5, 0, 100); 
+    stats.readiness = clamp(stats.readiness, 0, 100); 
     stats.czech = clamp(stats.czech + 10, 0, 100);  
     stats.allies = clamp(stats.allies + 30, 0, 100); 
     stats.trust = clamp(stats.trust, 0, 100);
+    stats.public = clamp(stats.public + 5, 0, 100);  
   }
 
   return stats;
+}
+
+function calculateDeterrenceProbability(stats) {
+  let score =
+      stats.readiness * 0.40 +
+      stats.allies    * 0.20 +
+      stats.public* 0.10 +
+      stats.trust* 0.10
+      stats.czech     * 0.20;
+
+  return Math.max(0, Math.min(100, Math.round(score)));
 }
 
 // Decision nodes [structured representation of events and options]
@@ -75,14 +84,14 @@ const nodes = {
       {
         text: "Launch a public campaign warning of German danger.",
         subtext: "You invite the public into strategic anxiety.",
-        effects: { readiness: +6, public: +6, trust: -3, allies: +3, czech: +2 },
+        effects: { readiness: +6, public: +6, trust: -3, allies: +5, czech: +2 },
         log: "Parliament hears blunt speeches; some backbenchers applaud, pacifists grumble.",
         next: "anschluss_1938"
       },
       {
         text: "Assume Hitler mainly wants limited revisions; focus on domestic reforms.",
         subtext: "You gamble that the European order can be managed with diplomacy.",
-        effects: { readiness: -4, public: +2, trust: +6, allies: 0, czech: -3 },
+        effects: { readiness: +2, public: -2, trust: +8, allies: -2, czech: -3 },
         log: "You treat German demands as manageable adjustments, postponing major defence expansion.",
         next: "anschluss_1938"
       }
@@ -103,21 +112,21 @@ const nodes = {
       {
         text: "Interpret Anschluss as a limited, ethnically framed adjustment.",
         subtext: "You downplay the systemic implications.",
-        effects: { readiness: -2, public: 0, trust: +6, allies: -3, czech: -4 },
+        effects: { readiness: -2, public: -2, trust: +6, allies: -3, czech: -4 },
         log: "You brief Parliament that German moves remain within 'self-determination' logic.",
         next: "sudeten_crisis"
       },
       {
         text: "Treat Anschluss as a major warning and step up defence coordination with France.",
         subtext: "You begin to think in terms of an eventual showdown.",
-        effects: { readiness: +5, public: +3, trust: -5, allies: +8, czech: +2 },
+        effects: { readiness: +5, public: +3, trust: -5, allies: +8, czech: -4 },
         log: "You press Paris to coordinate planning, though French politics are fragile.",
         next: "sudeten_crisis"
       },
       {
-        text: "Seek intelligence specifically on German capabilities and war-readiness.",
+        text: "Publicly continue advocating peace while privately seek intelligence specifically on German capabilities and war-readiness.",
         subtext: "You want a clearer picture before committing.",
-        effects: { readiness: +3, public: 0, trust: -1, allies: +2, czech: 0 },
+        effects: { readiness: +3, public: 0, trust: +2, allies: +2, czech: -4 },
         log: "You instruct the intelligence services to prioritise estimates of German rearmament.",
         next: "intel_dossier"
       }
@@ -131,20 +140,20 @@ const nodes = {
     tags: ["Uncertainty", "Estimates"],
     description: `
       Intelligence reports come in. Some analysts claim Germany is <strong>already formidable</strong>; others stress
-      bottlenecks in fuel and raw materials. There are serious margins of error. A Cabinet committee awaits your line.
+      bottlenecks in fuel and raw materials. There are serious margins of error. A Cabinet committee awaits your line, and your interpretation will be heard in parliament.
     `,
     choices: [
       {
-        text: "Assume worst-case German strength; treat time as necessary for Britain to Catch Up",
+        text: "Assume worst-case German strength; more time is needed for Britain to catch up",
         subtext: "You favour accommodation while Britain is weaker.",
-        effects: { readiness: +5, public: -4, trust: +4, allies: -1, czech: -0 },
+        effects: { readiness: +5, public: -4, trust: +4, allies: -1, czech: -1 },
         log: "You warn colleagues that Britain cannot yet risk a continental war.",
         next: "sudeten_crisis"
       },
       {
         text: "Assume Germany is still vulnerable; Britain is not vulnerable",
-        subtext: "You see scope for firmer resistance if war is delayed a little.",
-        effects: { readiness: +2, public: +4, trust: -4, allies: +3, czech: +1 },
+        subtext: "You see scope for firmer resistance right now.",
+        effects: { readiness: +2, public: +4, trust: -6, allies: +3, czech: +1 },
         log: "You note German weaknesses in oil and foreign exchange in your diary.",
         next: "sudeten_crisis"
       }
@@ -165,23 +174,24 @@ const nodes = {
       {
         text: "Signal to France and Prague that Britain may stand firm, but avoid explicit guarantees.",
         subtext: "You keep options open and test allied resolve.",
-        effects: { readiness: +3, public: -1, trust: -3, allies: +4, czech: +2 },
+        effects: { readiness: +4, public: +2, trust: -3, allies: +4, czech: +2 },
         log: "You send ambiguous messages: encouraging Prague, but stopping short of firm commitments.",
         next: "soviet_option"
       },
       {
         text: "Discourage French and Czech firmness; emphasise the need for negotiated concessions.",
         subtext: "You tilt toward managed territorial revision.",
-        effects: { readiness: 0, public: +3, trust: +4, allies: -4, czech: -6 },
+        effects: { readiness: +2, public: -2, trust: +4, allies: -4, czech: -6 },
         log: "Paris senses British reluctance; Prague grows anxious and isolated.",
         next: "soviet_option"
       },
       {
-        text: "Explore a broader front: discreetly sound out the Soviet Union.",
-        subtext: "You look for a larger deterrent coalition, despite ideological misgivings.",
-        effects: { readiness: +2, public: -2, trust: -2, allies: +5, czech: +3 },
-        log: "Initial Soviet signals suggest interest, but mutual suspicion is deep.",
-        next: "soviet_option"
+         text: "Explore a broader front: discreetly sound out the Soviet Union.",
+          subtext: "You look for a larger deterrent coalition, despite ideological misgivings.",
+          effects: { readiness: +6, public: +3, trust: -5, allies: +5, czech: +3 },
+          log: "Initial Soviet signals suggest interest, but mutual suspicion is deep.",
+          next: "soviet_option",
+          setFlag: "exploredUSSR"
       }
     ]
   },
@@ -199,7 +209,7 @@ const nodes = {
       {
         text: "Keep the USSR at arms’ length; rely on Britain and France as 'respectable' guarantors.",
         subtext: "You prioritise ideological comfort and domestic optics.",
-        effects: { readiness: 0, public: +3, trust: +2, allies: -3, czech: -3 },
+        effects: { readiness: 0, public: -1, trust: +5, allies: -3, czech: -3 },
         log: "Soviet diplomats note coolness and question Western seriousness.",
         next: "public_opinion"
       },
@@ -213,13 +223,31 @@ const nodes = {
       {
         text: "Openly propose a grand anti-aggression front including the USSR.",
         subtext: "You gamble that clarity of deterrent will outweigh ideological discomfort.",
-        effects: { readiness: +3, public: -8, trust: -4, allies: +7, czech: +5 },
+        effects: { readiness: +3, public: -3, trust: -8, allies: +7, czech: +5 },
         log: "Some Conservatives revolt; Labour applauds; Hitler fumes at the rhetoric.",
-        next: "public_opinion"
+        next: "ussr_conditional_1938"
       }
     ]
   },
-
+ussr_conditional_1938: {
+    id: "ussr_conditional_1938",
+    year: "Late Summer 1938",
+    title: "Soviet Diplomatic Response",
+    tags: ["USSR", "Allied Commitment", "Diplomacy"],
+    description: `
+      Following your public proposal for a grand anti-aggression front, the Soviet delegation responds in a
+      manner that reflects their assessment of Anglo-French resolve.
+    `,
+    // Choices will be dynamically generated based on Allied confidence
+    choices: [
+        {
+            text: "Proceed",
+            subtext: "",
+            effects: {},
+            next: "public_opinion"
+        }
+      ]
+  },
   public_opinion: {
     id: "public_opinion",
     year: "September 1938",
@@ -234,7 +262,7 @@ const nodes = {
       {
         text: "Emphasise the horrors of modern war and present peace as the paramount objective.",
         subtext: "You align strongly with pacifist sentiment.",
-        effects: { readiness: -2, public: +7, trust: +4, allies: -3, czech: -5 },
+        effects: { readiness: -2, public: -6, trust: +10, allies: -3, czech: -5 },
         log: "You speak movingly about air raids and civilian casualties; crowds cheer, strategists worry.",
         next: "munich_choice"
       },
@@ -248,7 +276,7 @@ const nodes = {
       {
         text: "Warn that further concessions may only embolden aggression despite the costs of war.",
         subtext: "You prepare the public for possible confrontation.",
-        effects: { readiness: +3, public: -3, trust: -4, allies: +3, czech: +4 },
+        effects: { readiness: +3, public: +3, trust: -14, allies: +3, czech: +4 },
         log: "You are accused of 'warming to war', but hawks in the Cabinet feel vindicated.",
         next: "munich_choice"
       }
@@ -347,6 +375,11 @@ function applyChoice(choice, node) {
   s.trust     = clamp(s.trust     + (eff.trust     || 0), 0, 100);
   s.allies    = clamp(s.allies    + (eff.allies    || 0), 0, 100);
   s.czech     = clamp(s.czech     + (eff.czech     || 0), 0, 100);
+  
+    // 🔥 INSERT FLAG HANDLING HERE
+  if (choice.setFlag) {
+    gameState.flags[choice.setFlag] = true;
+  }
 
   // Push log entry
   gameState.history.push({
@@ -401,6 +434,84 @@ function renderLog() {
 // Render the current event card and choices
 function renderNode() {
   const node = nodes[gameState.currentNodeId];
+  
+    // makes a clean copy of choices before modifying
+const originalChoices = [...(node.choices || [])];
+  
+  // CONDITIONAL CHOICE LOGIC FOR soviet_option
+if (gameState.currentNodeId === "soviet_option") {
+
+    // Filter the node's choices depending on flags
+    let baseChoices = [...node.choices];
+
+    // Only keep the USSR-front choice if exploredUSSR is true
+    baseChoices = baseChoices.filter(choice => {
+        if (choice.text.includes("Openly propose a grand anti-aggression front")) {
+            return gameState.flags.exploredUSSR === true;
+        }
+        return true; // keep all other choices
+    });
+
+    // Replace the choices array for this render
+    node.choices = baseChoices;
+}
+  
+  // Special conditional Soviet event
+if (gameState.currentNodeId === "ussr_conditional_1938") {
+
+    let sovietText = "";
+    const allies = gameState.stats.allies;
+  
+  let dynamicEffects = {};
+
+    if (allies > 70) {
+        sovietText = `
+          <p>
+            During the follow-up meeting, the Soviet representative acknowledges that the Red Army cannot send 
+            troops to assist Czechoslovakia due to <strong>Poland and Romania refusing transit rights</strong>. 
+            However, with Britain and France demonstrating strong resolve, Moscow signals a major 
+            shift: the USSR is <strong>willing to declare war on Germany</strong> if Germany attacks Czechoslovakia 
+            <em>and</em> both Western powers declare war as well. This is framed as a credible deterrent posture, 
+            provided London and Paris stand firm.
+          </p>
+        `;
+              // ✔ Effects for STRONG ALLIED CONFIDENCE
+        dynamicEffects = {
+            readiness: +4,
+            allies: +6,
+            public: +6,
+            trust: -2,
+            czech: +3
+        };
+
+    } else {
+        sovietText = `
+          <p>
+            The Soviet representative responds cautiously. Sensing limited Allied determination, Moscow 
+            <strong>insists repeatedly on transit rights through Poland or Romania</strong> as a precondition 
+            for any military action. Privately, your advisers judge this as a Soviet diplomatic tactic—an 
+            attempt to avoid firm commitments when allied resolve appears uncertain. For now, the USSR 
+            remains non-committal.
+          </p>
+        `;
+              // ✔ Effects for WEAK ALLIED CONFIDENCE
+        dynamicEffects = {
+            readiness: -1,
+            allies: -4,
+            public: -3,
+            trust: +2,   /* Britons misinterpret Soviet evasiveness as unreliability */
+            czech: -3
+        };
+    }
+
+    // override node description dynamically
+    node.description = sovietText + `
+      <p style="margin-top:10px; color:#9ca3af;">
+        (This Soviet reaction is determined by your current confidence-in-allies score.)
+      </p>
+    `;
+  node.choices[0].effects = dynamicEffects;
+}
   if (!node) return;
 
   const yearEl = document.getElementById("event-year");
@@ -511,6 +622,10 @@ if (node.isEnding) {
     });
     choiceContainer.appendChild(btn);
   });
+    // 🔥 Restore choices after rendering
+  if (gameState.currentNodeId === "soviet_option") {
+      node.choices = originalChoices;
+  }
 }
 
 
@@ -521,12 +636,18 @@ function restartGame() {
   gameState.stats = {
     readiness: 45,
     public: 40,
-    trust: 45,
+    trust: 65,
     allies: 50,
     czech: 55
   };
   gameState.turn = 0;
   gameState.history = [];
+  
+    // 🔥 FIX: Reset conditional flags
+  gameState.flags = {
+    exploredUSSR: false
+  };
+  
   renderStats();
   renderLog();
   renderNode();
