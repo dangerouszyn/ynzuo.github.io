@@ -55,7 +55,7 @@ function calculateDeterrenceProbability(stats) {
       stats.readiness * 0.40 +
       stats.allies    * 0.20 +
       stats.public* 0.10 +
-      stats.trust* 0.10
+      stats.trust* 0.10 +
       stats.czech     * 0.20;
 
   return Math.max(0, Math.min(100, Math.round(score)));
