@@ -24,18 +24,18 @@ function applyPostEndingConsequences(endingId, stats) {
     // Historical consequences (1939 trajectory)
     stats.czech = 0;                 // Complete dismemberment
     stats.readiness = clamp(stats.readiness + 30, 0, 100);  
-    stats.trust = clamp(stats.trust - 40, 0, 100);          
+    stats.trust = clamp(stats.trust -5, 0, 100);          
     stats.allies = clamp(stats.allies - 10, 0, 100);        
-    stats.public = clamp(stats.public + 25, 0, 100);        
+    stats.public = clamp(stats.public + 40, 0, 100);        
   }
 
   if (endingId === "ending_conditional") {
     // Partial appeasement → early war model
     stats.czech = clamp(stats.czech, 0, 100);  // Prague loses fortification
     stats.readiness = clamp(stats.readiness + 10, 0, 100);
-    stats.trust = clamp(stats.trust - 25, 0, 100);  
+    stats.trust = clamp(stats.trust +5, 0, 100);  
     stats.allies = clamp(stats.allies + 10, 0, 100); 
-    stats.public = clamp(stats.public + 15, 0, 100);   
+    stats.public = clamp(stats.public + 25, 0, 100);   
   }
 
   if (endingId === "ending_confrontation") {
@@ -52,13 +52,24 @@ function applyPostEndingConsequences(endingId, stats) {
 
 function calculateDeterrenceProbability(stats) {
   let score =
-      stats.readiness * 0.40 +
-      stats.allies    * 0.20 +
-      stats.public* 0.10 +
-      stats.trust* 0.10 +
-      stats.czech     * 0.20;
+      stats.readiness * 0.20 +
+      stats.allies    * 0.55 +
+      stats.public* 0 +
+      stats.trust* 0 +
+      stats.czech     * 0.30;
 
   return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function calculateWarWinProbability(stats) {
+  let scoretwo =
+      stats.readiness * 0.45 +
+      stats.allies    * 0.35 +
+      (stats.public-50)* 0.4 +
+      (stats.trust-50)* 0.4 +
+      stats.czech     * 0.3;
+
+  return Math.max(0, Math.min(100, Math.round(scoretwo)));
 }
 
 // Decision nodes [structured representation of events and options]
@@ -262,7 +273,7 @@ ussr_conditional_1938: {
       {
         text: "Emphasise the horrors of modern war and present peace as the paramount objective.",
         subtext: "You align strongly with pacifist sentiment.",
-        effects: { readiness: -2, public: -6, trust: +10, allies: -3, czech: -5 },
+        effects: { readiness: -2, public: -6, trust: +20, allies: -3, czech: -5 },
         log: "You speak movingly about air raids and civilian casualties; crowds cheer, strategists worry.",
         next: "munich_choice"
       },
@@ -276,7 +287,7 @@ ussr_conditional_1938: {
       {
         text: "Warn that further concessions may only embolden aggression despite the costs of war.",
         subtext: "You prepare the public for possible confrontation.",
-        effects: { readiness: +3, public: +3, trust: -14, allies: +3, czech: +4 },
+        effects: { readiness: +4, public: +4, trust: -14, allies: +3, czech: +4 },
         log: "You are accused of 'warming to war', but hawks in the Cabinet feel vindicated.",
         next: "munich_choice"
       }
@@ -297,21 +308,21 @@ ussr_conditional_1938: {
       {
         text: "Accept the Munich terms, framing them as the price of 'peace for our time'.",
         subtext: "You bet that satisfying territorial claims will stabilise Europe.",
-        effects: { readiness: +2, public: +4, trust: +6, allies: -3, czech: -40 },
+        effects: { readiness: +5, public: +4, trust: +25, allies: -3, czech: -40 },
         log: "You sign the agreement, believing you have averted immediate catastrophe.",
         next: "ending_appeasement"
       },
       {
         text: "Accept in principle, but insist on stronger guarantees for what remains of Czechoslovakia.",
         subtext: "You try to bind Hitler and reassure allies simultaneously.",
-        effects: { readiness: +3, public: +1, trust: +1, allies: +4, czech: -30 },
+        effects: { readiness: +3, public: +1, trust: +15, allies: +4, czech: -30 },
         log: "You return with an agreement and solemn pledges to defend the new status quo.",
         next: "ending_conditional"
       },
       {
         text: "Refuse to sign unless Czechoslovakia is directly represented and key fortifications remain.",
         subtext: "You risk immediate crisis and potential war.",
-        effects: { readiness: -2, public: -4, trust: -6, allies: +8, czech: +2 },
+        effects: { readiness: -2, public: -4, trust: -10, allies: +8, czech: +2 },
         log: "You stiffen in the negotiations; tempers flare as the prospect of war looms.",
         next: "ending_confrontation"
       }
@@ -472,16 +483,16 @@ if (gameState.currentNodeId === "ussr_conditional_1938") {
             However, with Britain and France demonstrating strong resolve, Moscow signals a major 
             shift: the USSR is <strong>willing to declare war on Germany</strong> if Germany attacks Czechoslovakia 
             <em>and</em> both Western powers declare war as well. This is framed as a credible deterrent posture, 
-            provided London and Paris stand firm.
+            provided London and Paris stand firm, and allows the VVS to contribute in the skies of Czechoslovakia too.
           </p>
         `;
               // ✔ Effects for STRONG ALLIED CONFIDENCE
         dynamicEffects = {
-            readiness: +4,
+            readiness: +1,
             allies: +6,
             public: +6,
-            trust: -2,
-            czech: +3
+            trust: -3,
+            czech: +25
         };
 
     } else {
@@ -500,7 +511,7 @@ if (gameState.currentNodeId === "ussr_conditional_1938") {
             allies: -4,
             public: -3,
             trust: +2,   /* Britons misinterpret Soviet evasiveness as unreliability */
-            czech: -3
+            czech: 0
         };
     }
 
@@ -554,8 +565,11 @@ if (node.isEnding) {
             After Munich, events move swiftly. Germany occupies Prague in March 1939,
             <strong>completing the destruction of Czechoslovakia</strong>.
             British trust in Hitler collapses, and defence spending surges.
-            Public confidence in your judgement falters while European stability deteriorates further.
+            Public confidence in your judgement falters, but the tense situationo has also rallied much of the nation around the Government, while European stability deteriorates further.
           </p>
+          <p style="margin-top:8px;">
+          The upside is that you have earned Britain longer time to prepare for war, and with advancements in Radar and new fighter models, Britain should be in a decent position for war.
+                    </p>
         `;
     }
 
@@ -563,8 +577,8 @@ if (node.isEnding) {
         endingNarrative = `
           <p style="margin-top:8px;">
             Your conditional stance stiffens French resolve. Hitler, frustrated by partial concessions,
-            accelerates military preparations. By early 1939, Europe spirals into a
-            <strong>premature full-scale confrontation in early 1939</strong>. Czechoslovakia has lost the border fortifications, but what remains of it joins the Allies in the early war that Germany is less prepared for than historically.
+            accelerates military preparations. By early 1939, Europe has spiraled into a
+            <strong>premature full-scale confrontation</strong>. Czechoslovakia has lost the border fortifications, but what remains of it joins the Allies in an early war that Germany is less prepared for than historically.
           </p>
         `;
     }
@@ -572,15 +586,16 @@ if (node.isEnding) {
     if (node.id === "ending_confrontation") {
         endingNarrative = `
           <p style="margin-top:8px;">
-            Your refusal at Munich triggers an immediate crisis. War breaks out under conditions that preserve
-            Czech fortifications and Allied credibility. The strategic balance favours the Allies more than in the
-            historical 1939 timeline.
+            Your refusal at Munich triggers an immediate crisis. Hitler will either be deterred to back off, or even if war does breaks out, it will happen under conditions that preserve
+            Czech fortifications and Allies joining the war. Even though Britain is less prepared than historical 1939 timeline, the strategic balance still favours the Allies more as Germany is way less prepared and will be immediately engaged in a two-front war.
           </p>
         `;
     }
 
     // Compute probability AFTER consequences
     const prob = calculateDeterrenceProbability(gameState.stats);
+  
+     const prob2 = calculateWarWinProbability(gameState.stats);
 
     // 🎨 Now insert everything into the ending card
     choiceContainer.innerHTML = `
@@ -589,8 +604,12 @@ if (node.isEnding) {
       ${endingNarrative}
 
       <p style="font-size:0.9rem; margin-top:8px; color:#fde68a;">
-        Estimated probability of successful deterrence or victory in a resulting war:
+        Estimated probability of successful deterrence (probability that Hitler will be deterred from further territorial expansions):
         <strong>${prob}%</strong>
+      </p>
+      <p style="font-size:0.9rem; margin-top:8px; color:#fde68a;">
+Estimated probability of victory in a resulting war (if deterrence fails and war does occur) against Germany: 
+        <strong>${prob2}%</strong>
       </p>
 
       <button id="ending-restart" class="restart-btn" style="margin-top:10px;">
