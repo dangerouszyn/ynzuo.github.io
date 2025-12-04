@@ -56,7 +56,8 @@ let llmError = null;
 
 async function initLocalLLM() {
   try {
-    const modelId = "Phi-3-mini-4k-instruct-q4f16_1-MLC";  // much smaller, faster
+const modelId = "TinyLlama-1.1B-Chat-v0.4";
+
     console.time("LLM init");
     llm = await webllm.CreateMLCEngine(modelId, {
       gpu_memory_utilization: 0.85
