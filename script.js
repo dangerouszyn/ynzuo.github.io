@@ -50,6 +50,26 @@ function applyPostEndingConsequences(endingId, stats) {
   return stats;
 }
 
+let llm;
+let llmReady = false;
+let llmError = null;
+
+async function initLocalLLM() {
+  try {
+    const modelId = "Phi-3-mini-4k-instruct-q4f16_1-MLC";  // much smaller, faster
+    console.time("LLM init");
+    llm = await webllm.CreateMLCEngine(modelId, {
+      gpu_memory_utilization: 0.85
+    });
+    console.timeEnd("LLM init");
+    llmReady = true;
+  } catch (err) {
+    console.error("LLM failed to initialise:", err);
+    llmError = err;
+  }
+}
+
+
 function calculateDeterrenceProbability(stats) {
   let score =
       stats.readiness * 0.20 +
@@ -70,6 +90,38 @@ function calculateWarWinProbability(stats) {
       stats.czech     * 0.3;
 
   return Math.max(0, Math.min(100, Math.round(scoretwo)));
+}
+
+// === AI Ending Generator (Local LLM) ===
+async function generateEndingLocalAI(history, prob, prob2, stats, endingId) {
+  const prompt =
+`You are generating an alternate-history analysis.
+
+Ending type: ${endingId}
+
+Player choice log:
+${history.map(h => "- " + h.choiceText + " (" + h.nodeTitle + ")").join("\n")}
+
+Deterrence probability: ${prob}%
+War victory probability: ${prob2}%
+
+Final state:
+${JSON.stringify(stats, null, 2)}
+
+Write 3–4 paragraphs of historically grounded narrative that logically explains:
+- how these decisions shaped diplomacy,
+- whether Hitler was deterred,
+- likely outcomes if war occurs,
+- strategic implications for Britain, France, and Czechoslovakia.`;
+
+  const output = await llm.chat.completions.create({
+    messages: [
+      { role: "user", content: prompt }
+    ],
+    stream: false
+  });
+
+  return output.choices[0].message.content;
 }
 
 // Decision nodes [structured representation of events and options]
@@ -443,7 +495,7 @@ function renderLog() {
 }
 
 // Render the current event card and choices
-function renderNode() {
+async function renderNode() {
   const node = nodes[gameState.currentNodeId];
   
     // makes a clean copy of choices before modifying
@@ -545,70 +597,64 @@ if (gameState.currentNodeId === "ussr_conditional_1938") {
     tagsEl.appendChild(span);
   });
 
-// If this is an ending node
 if (node.isEnding) {
     cardEl.classList.add("ending");
 
-    // 🔥 Apply historical/counterfactual consequences BEFORE calculating probability
     applyPostEndingConsequences(node.id, gameState.stats);
-
-    // Re-render stats to show the new post-ending state
     renderStats();
 
-    // 🎯 Generate dynamic narrative text based on the ending
-    let endingNarrative = "";
-
-    if (node.id === "ending_appeasement") {
-        endingNarrative = `
-          <p style="margin-top:8px;">
-          <strong>This is the historical outcome</strong>.
-            After Munich, events move swiftly. Germany occupies Prague in March 1939,
-            <strong>completing the destruction of Czechoslovakia</strong>.
-            British trust in Hitler collapses, and defence spending surges.
-            Public confidence in your judgement falters, but the tense situationo has also rallied much of the nation around the Government, while European stability deteriorates further.
-          </p>
-          <p style="margin-top:8px;">
-          The upside is that you have earned Britain longer time to prepare for war, and with advancements in Radar and new fighter models, Britain should be in a decent position for war.
-                    </p>
-        `;
-    }
-
-    if (node.id === "ending_conditional") {
-        endingNarrative = `
-          <p style="margin-top:8px;">
-            Your conditional stance stiffens French resolve. Hitler, frustrated by partial concessions,
-            accelerates military preparations. By early 1939, Europe has spiraled into a
-            <strong>premature full-scale confrontation</strong>. Czechoslovakia has lost the border fortifications, but what remains of it joins the Allies in an early war that Germany is less prepared for than historically.
-          </p>
-        `;
-    }
-
-    if (node.id === "ending_confrontation") {
-        endingNarrative = `
-          <p style="margin-top:8px;">
-            Your refusal at Munich triggers an immediate crisis. Hitler will either be deterred to back off, or even if war does breaks out, it will happen under conditions that preserve
-            Czech fortifications and Allies joining the war. Even though Britain is less prepared than historical 1939 timeline, the strategic balance still favours the Allies more as Germany is way less prepared and will be immediately engaged in a two-front war.
-          </p>
-        `;
-    }
-
-    // Compute probability AFTER consequences
     const prob = calculateDeterrenceProbability(gameState.stats);
-  
-     const prob2 = calculateWarWinProbability(gameState.stats);
+    const prob2 = calculateWarWinProbability(gameState.stats);
+    const history = gameState.history;
 
-    // 🎨 Now insert everything into the ending card
+    // If the model failed or isn’t ready, fall back
+    if (!llmReady || llmError) {
+      choiceContainer.innerHTML = `
+        <div class="ending-title">Simulation Complete</div>
+        <p><strong>AI ending unavailable.</strong></p>
+        <p>You can still review your deterrence and war outcome probabilities:</p>
+        <p style="font-size:0.9rem; margin-top:8px; color:#fde68a;">
+          Estimated deterrence probability: <strong>${prob}%</strong>
+        </p>
+        <p style="font-size:0.9rem; margin-top:8px; color:#fde68a;">
+          Estimated war victory probability: <strong>${prob2}%</strong>
+        </p>
+        <button id="ending-restart" class="restart-btn" style="margin-top:10px;">
+          Run the Scenario Again
+        </button>
+      `;
+      document.getElementById("ending-restart")
+        .addEventListener("click", () => restartGame());
+      return;
+    }
+
+    // If ready, show loading text and call AI
+    choiceContainer.innerHTML = `
+      <div class="ending-title">Simulation Complete</div>
+      <p>Generating personalised alternate-history analysis…</p>
+    `;
+
+console.time("AI ending generation");
+const aiNarrative = await generateEndingLocalAI(
+  history, prob, prob2, gameState.stats, node.id
+);
+console.timeEnd("AI ending generation");
+
+
     choiceContainer.innerHTML = `
       <div class="ending-title">Simulation Complete</div>
 
-      ${endingNarrative}
+      <div class="ending-narrative">
+        ${aiNarrative}
+      </div>
 
       <p style="font-size:0.9rem; margin-top:8px; color:#fde68a;">
-        Estimated probability of successful deterrence (probability that Hitler will be deterred from further territorial expansions):
+        Estimated deterrence probability:
         <strong>${prob}%</strong>
       </p>
+
       <p style="font-size:0.9rem; margin-top:8px; color:#fde68a;">
-Estimated probability of victory in a resulting war (if deterrence fails and war does occur) against Germany: 
+        Estimated war victory probability:
         <strong>${prob2}%</strong>
       </p>
 
@@ -617,10 +663,12 @@ Estimated probability of victory in a resulting war (if deterrence fails and war
       </button>
     `;
 
-    const btn = document.getElementById("ending-restart");
-    btn.addEventListener("click", () => restartGame());
+    document.getElementById("ending-restart")
+      .addEventListener("click", () => restartGame());
     return;
 }
+
+
 
   cardEl.classList.remove("ending");
 
@@ -674,6 +722,10 @@ function restartGame() {
 
 // Initialise when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
+  
+    // Load the local LLM model into the browser
+  initLocalLLM();
+
   const restartBtn = document.getElementById("restart-btn");
   restartBtn.addEventListener("click", restartGame);
 
