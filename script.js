@@ -56,8 +56,7 @@ let llmError = null;
 
 async function initLocalLLM() {
   try {
-const modelId = "gpt2-medium";
-
+    const modelId = "Phi-3-mini-4k-instruct-q4f16_1-MLC";  // much smaller, faster
     console.time("LLM init");
     llm = await webllm.CreateMLCEngine(modelId, {
       gpu_memory_utilization: 0.85
@@ -446,12 +445,13 @@ function applyChoice(choice, node) {
   }
 
   // Push log entry
-  gameState.history.push({
-    turn: gameState.turn,
-    nodeTitle: node.title,
-    choiceText: choice.text,
-    log: choice.log || ""
-  });
+gameState.history.push({
+  turn: gameState.turn,
+  nodeTitle: node.title,
+  choiceText: choice.text,
+  choiceSubtext: choice.subtext || "",
+  log: choice.log || ""
+});
 
   // Move to next node
   gameState.currentNodeId = choice.next;
@@ -524,22 +524,26 @@ if (gameState.currentNodeId === "soviet_option") {
 if (gameState.currentNodeId === "ussr_conditional_1938") {
 
     let sovietText = "";
-    const allies = gameState.stats.allies;
-  
-  let dynamicEffects = {};
+    let dynamicEffects = {};
+    let dynamicChoiceText = "";
+    let dynamicSubtext = "";
+    let dynamicLog = "";
 
+    const allies = gameState.stats.allies;
+
+    // STRONG ALLIED CONFIDENCE RESPONSE
     if (allies > 70) {
         sovietText = `
           <p>
             During the follow-up meeting, the Soviet representative acknowledges that the Red Army cannot send 
             troops to assist Czechoslovakia due to <strong>Poland and Romania refusing transit rights</strong>. 
-            However, with Britain and France demonstrating strong resolve, Moscow signals a major 
-            shift: the USSR is <strong>willing to declare war on Germany</strong> if Germany attacks Czechoslovakia 
-            <em>and</em> both Western powers declare war as well. This is framed as a credible deterrent posture, 
-            provided London and Paris stand firm, and allows the VVS to contribute in the skies of Czechoslovakia too.
+            Yet, sensing strong Anglo–French resolve, Moscow signals something unprecedented: 
+            <strong>the USSR is willing to declare war on Germany</strong> if Germany attacks Czechoslovakia 
+            and the Western powers also declare war. Soviet air support would be coordinated from afar, adding 
+            pressure on Berlin.
           </p>
         `;
-              // ✔ Effects for STRONG ALLIED CONFIDENCE
+
         dynamicEffects = {
             readiness: +1,
             allies: +6,
@@ -548,34 +552,49 @@ if (gameState.currentNodeId === "ussr_conditional_1938") {
             czech: +25
         };
 
-    } else {
+        dynamicChoiceText = "Acknowledge the Soviet commitment and fold it into Allied planning.";
+        dynamicSubtext = "Soviet readiness strengthens the deterrent but complicates Western politics.";
+        dynamicLog = "While the Soviet Union still has no transit rights through Poland and Romania, they commit to declare war on Germany and sending the VVS to Czechoslovakia to help if both France and Britain declares war should Germany invades Czechoslovakia.";
+
+    }
+    // WEAK ALLIED CONFIDENCE RESPONSE
+    else {
         sovietText = `
           <p>
-            The Soviet representative responds cautiously. Sensing limited Allied determination, Moscow 
-            <strong>insists repeatedly on transit rights through Poland or Romania</strong> as a precondition 
-            for any military action. Privately, your advisers judge this as a Soviet diplomatic tactic—an 
-            attempt to avoid firm commitments when allied resolve appears uncertain. For now, the USSR 
-            remains non-committal.
+            The Soviet representative responds cautiously. Sensing hesitation in London and Paris, Moscow 
+            <strong>insists repeatedly on transit rights through Poland or Romania</strong> before offering any military aid.
+            British advisers suspect this is a diplomatic tactic to avoid firm commitments when Western resolve 
+            appears uncertain. For now, the USSR withholds guarantees.
           </p>
         `;
-              // ✔ Effects for WEAK ALLIED CONFIDENCE
+
         dynamicEffects = {
             readiness: -1,
             allies: -4,
             public: -3,
-            trust: +2,   /* Britons misinterpret Soviet evasiveness as unreliability */
+            trust: +2, 
             czech: 0
         };
+
+        dynamicChoiceText = "Note Soviet hesitation and prepare to proceed without firm commitments.";
+        dynamicSubtext = "Uncertainty in Allied signalling makes Moscow evasive.";
+        dynamicLog = "You record that Soviet evasiveness stems partly from doubts about Western determination.";
     }
 
-    // override node description dynamically
+    // Update description
     node.description = sovietText + `
       <p style="margin-top:10px; color:#9ca3af;">
         (This Soviet reaction is determined by your current confidence-in-allies score.)
       </p>
     `;
-  node.choices[0].effects = dynamicEffects;
+
+    // Update the choice fields exactly like your normal events
+    node.choices[0].text = dynamicChoiceText;
+    node.choices[0].subtext = dynamicSubtext;
+    node.choices[0].log = dynamicLog;
+    node.choices[0].effects = dynamicEffects;
 }
+
   if (!node) return;
 
   const yearEl = document.getElementById("event-year");
@@ -608,26 +627,106 @@ if (node.isEnding) {
     const prob2 = calculateWarWinProbability(gameState.stats);
     const history = gameState.history;
 
-    // If the model failed or isn’t ready, fall back
-    if (!llmReady || llmError) {
-      choiceContainer.innerHTML = `
-        <div class="ending-title">Simulation Complete</div>
-        <p><strong>AI ending unavailable.</strong></p>
-        <p>You can still review your deterrence and war outcome probabilities:</p>
-        <p style="font-size:0.9rem; margin-top:8px; color:#fde68a;">
-          Estimated deterrence probability: <strong>${prob}%</strong>
-        </p>
-        <p style="font-size:0.9rem; margin-top:8px; color:#fde68a;">
-          Estimated war victory probability: <strong>${prob2}%</strong>
-        </p>
-        <button id="ending-restart" class="restart-btn" style="margin-top:10px;">
-          Run the Scenario Again
-        </button>
-      `;
-      document.getElementById("ending-restart")
-        .addEventListener("click", () => restartGame());
-      return;
-    }
+if (!llmReady || llmError) {
+  // Construct a full offline prompt
+  const manualPrompt = `
+You are generating an alternate-history analysis of British crisis decision-making in 1937–1938. 
+The simulation ends in one of three historically grounded scenarios. 
+
+INTERPRETATION RULES FOR PROBABILITIES
+-------------------------------------
+The meaning of "deterrence probability" and "war victory probability" depends on the specific ending:
+
+1. ending_appeasement (Historical Munich Agreement, 1938)
+   - Deterrence probability = the likelihood that Hitler is deterred from occupying the remainder of Czechoslovakia in March 1939 (historically, he was NOT deterred).
+   - War victory probability = if deterrence fails, the probability that Britain will end up winning in the historical war timeline beginning after Germany invades Poland in 1939, even if her allies do not make it.
+
+2. ending_conditional (Conditional Munich + Guarantees)
+   - Deterrence probability = probability Hitler is deterred from further dismembering Czechoslovakia after Munich due to firmer Anglo-French signalling.
+   - War victory probability = if deterrence fails, the chance that Britain, France, and Czechoslovakia jointly prevail in an early war beginning in early 1939 BEFORE German full mobilisation.
+
+3. ending_confrontation (Rejection of Munich)
+   - Deterrence probability = probability Hitler backs down from invading Czechoslovakia when faced with intact Czech border fortifications and a united Anglo-French stance (possibly with Soviet support).
+   - War victory probability = if deterrence fails and war begins in late 1938, the chance that Britain + France + Czechoslovakia (plus any possible Soviet involvement depending on prior diplomacy) defeat Germany.
+
+END OF RULES
+
+ENDING TYPE:
+${node.id}
+
+PLAYER DECISION RECORD:
+${history.map(h =>
+  `• ${h.choiceText}  [Event: ${h.nodeTitle}]
+   - Subtext: ${h.choiceSubtext}
+   - Diary/Log: ${h.log}`
+).join("\n\n")}
+
+DETERRENCE PROBABILITY:
+${prob}%
+
+WAR VICTORY PROBABILITY:
+${prob2}%
+
+FINAL STRATEGIC STATE:
+${JSON.stringify(gameState.stats, null, 2)}
+
+TASK for the Model:
+Write 3–4 paragraphs of historically grounded alternate-history analysis that:
+1. Interprets the probabilities according to the rules above (depending on the ending type).
+2. Explains how the player's decisions shaped British diplomacy, Allied cohesion, and German perception.
+3. Assesses whether Hitler is likely to be deterred in this branch of history.
+4. If war occurs, evaluates the likely military balance and coalition prospects.
+5. Discusses the implications for Czechoslovakia, France, Soviet diplomacy (if applicable), and long-term European stability.
+6. Uses the tone and analytical style of a professional historian war-gaming counterfactuals.
+7. Indicators are, respectively in sequence, Military Readiness, Public Support for Firmness, Public Support for Government, Unity with Allies (France & Others), Unity with Allies (France & Others). All are out of a maximum of 100.
+  `.trim();
+
+  choiceContainer.innerHTML = `
+    <div class="ending-title">Simulation Complete</div>
+
+    <p><strong>Instructions on How to Obtain Your Custom Narrative</strong></p>
+    <p>You can obtain a detailed ending narrative by doing the following.  
+       Copy the prompt below and paste it into an online large language model (ChatGPT, Claude, etc.):</p>
+
+    <textarea id="manual-ai-prompt" class="manual-prompt-box" style="
+      width: 100%;
+      height: 250px;
+      margin-top: 10px;
+      background: #1e1e1e;
+      color: #e0e0e0;
+      padding: 10px;
+      border: 1px solid #555;
+      font-size: 0.85rem;
+    ">${manualPrompt}</textarea>
+
+    <button id="copy-manual-prompt" class="choice-btn" 
+      style="margin-top: 10px; background: #3b82f6;">
+      Copy Prompt to Clipboard
+    </button>
+
+    <p style="margin-top: 15px; font-size: 0.9rem; color:#fde68a;">
+      Deterrence probability: <strong>${prob}%</strong><br>
+      War victory probability: <strong>${prob2}%</strong>
+    </p>
+
+    <button id="ending-restart" class="restart-btn" style="margin-top:10px;">
+      Run the Scenario Again
+    </button>
+  `;
+
+  // Enable copy-to-clipboard
+  document.getElementById("copy-manual-prompt").addEventListener("click", () => {
+    const text = document.getElementById("manual-ai-prompt").value;
+    navigator.clipboard.writeText(text);
+    alert("Prompt copied to clipboard!");
+  });
+
+  document.getElementById("ending-restart")
+    .addEventListener("click", () => restartGame());
+
+  return;
+}
+
 
     // If ready, show loading text and call AI
     choiceContainer.innerHTML = `
