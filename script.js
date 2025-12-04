@@ -23,16 +23,16 @@ function applyPostEndingConsequences(endingId, stats) {
   if (endingId === "ending_appeasement") {
     // Historical consequences (1939 trajectory)
     stats.czech = 0;                 // Complete dismemberment
-    stats.readiness = clamp(stats.readiness + 30, 0, 100);  
-    stats.trust = clamp(stats.trust -5, 0, 100);          
+    stats.readiness = clamp(stats.readiness + 20, 0, 100);  
+    stats.trust = clamp(stats.trust -10, 0, 100);          
     stats.allies = clamp(stats.allies - 10, 0, 100);        
-    stats.public = clamp(stats.public + 40, 0, 100);        
+    stats.public = clamp(stats.public + 50, 0, 100);        
   }
 
   if (endingId === "ending_conditional") {
     // Partial appeasement → early war model
     stats.czech = clamp(stats.czech, 0, 100);  // Prague loses fortification
-    stats.readiness = clamp(stats.readiness + 10, 0, 100);
+    stats.readiness = clamp(stats.readiness + 8, 0, 100);
     stats.trust = clamp(stats.trust +5, 0, 100);  
     stats.allies = clamp(stats.allies + 10, 0, 100); 
     stats.public = clamp(stats.public + 25, 0, 100);   
@@ -140,26 +140,85 @@ const nodes = {
       {
         text: "Quietly prioritise rearmament while avoiding public alarms.",
         subtext: "You bank on time: build strength first, confrontation later.",
-        effects: { readiness: +10, public: -2, trust: 0, allies: +2, czech: 0 },
+        effects: { readiness: +2, public: -2, trust: 0, allies: +2, czech: 0 },
         log: "You instruct the Chiefs of Staff to accelerate rearmament, but you keep public rhetoric moderate.",
-        next: "anschluss_1938"
+        next: "rearmament_budget_1937"
       },
       {
         text: "Launch a public campaign warning of German danger.",
         subtext: "You invite the public into strategic anxiety.",
-        effects: { readiness: +6, public: +6, trust: -3, allies: +5, czech: +2 },
+        effects: { readiness: +1, public: +6, trust: -6, allies: +5, czech: +2 },
         log: "Parliament hears blunt speeches; some backbenchers applaud, pacifists grumble.",
-        next: "anschluss_1938"
+        next: "rearmament_budget_1937"
       },
       {
         text: "Assume Hitler mainly wants limited revisions; focus on domestic reforms.",
         subtext: "You gamble that the European order can be managed with diplomacy.",
-        effects: { readiness: +2, public: -2, trust: +8, allies: -2, czech: -3 },
+        effects: { readiness: +0, public: -2, trust: +8, allies: -2, czech: -3 },
         log: "You treat German demands as manageable adjustments, postponing major defence expansion.",
-        next: "anschluss_1938"
+        next: "rearmament_budget_1937"
       }
     ]
   },
+  
+  rearmament_budget_1937: {
+    id: "rearmament_budget_1937",
+    year: "Late 1937",
+    title: "The Treasury’s Stand: Rearmament vs Fiscal Orthodoxy",
+    tags: ["Economy", "Rearmament", "Domestic Politics"],
+    description: `
+      As intelligence hints at growing German ambitions, the question of <strong>how fast Britain should rearm</strong>
+      becomes unavoidable. 
+
+      The Treasury insists that uncontrolled spending will <em>cripple sterling, undermine investor confidence, and
+      repeat the inflationary chaos after the Great War</em>. Military chiefs argue that without rapid expansion, 
+      Britain will be dangerously exposed by 1939. 
+
+      You must decide whether to <strong>override Treasury caution</strong>, <strong>preserve fiscal orthodoxy</strong>, 
+      or attempt a <strong>delicate Chamberlain-style compromise</strong> that preserves stability while strengthening defence.
+    `,
+    choices: [
+      {
+        text: "Override Treasury caution and massively accelerate rearmament.",
+        subtext: "You prioritise military strength over fiscal stability.",
+        effects: { 
+          readiness: +10, 
+          public: -4, 
+          trust: -6, 
+          allies: +4, 
+          czech: 0 
+        },
+        log: "You approve aggressive expenditure increases. Treasury officials warn of future economic strain.",
+        next: "anschluss_1938"
+      },
+      {
+        text: "Side with the Treasury and preserve strict budget discipline.",
+        subtext: "You defend sterling and financial stability above short-term military needs.",
+        effects: { 
+          readiness: +1, 
+          public: +2, 
+          trust: +10, 
+          allies: -2, 
+          czech: -1 
+        },
+        log: "You reaffirm Treasury control. Defence planners quietly worry about lost time.",
+        next: "anschluss_1938"
+      },
+      {
+        text: "Pursue Chamberlain’s balancing act: controlled expansion financed by selective taxes and borrowing.",
+        subtext: "You maintain investor confidence while still meaningfully expanding the armed forces.",
+        effects: { 
+          readiness: +6, 
+          public: 0, 
+          trust: +6, 
+          allies: +2, 
+          czech: 0 
+        },
+        log: "Careful fiscal manoeuvring keeps sterling steady while allowing meaningful rearmament.",
+        next: "anschluss_1938"
+      }
+    ]
+},
 
   anschluss_1938: {
     id: "anschluss_1938",
@@ -202,13 +261,13 @@ const nodes = {
     title: "Conflicting Intelligence Dossiers",
     tags: ["Uncertainty", "Estimates"],
     description: `
-      Intelligence reports come in. Some analysts claim Germany is <strong>already formidable</strong>; others stress
-      bottlenecks in fuel and raw materials. There are serious margins of error. A Cabinet committee awaits your line, and your interpretation will be heard in parliament.
+      Intelligence reports come in. Some analysts claim Germany is <strong>already formidable and capable of massive air raids on Britain</strong>; others stress
+      bottlenecks in fuel and raw materials and <strong>incomplete buildup and mobilisation</strong>. There are serious margins of error. A Cabinet committee awaits your line, and <strong>your interpretation will be heard by senior officials</strong>.
     `,
     choices: [
       {
         text: "Assume worst-case German strength; more time is needed for Britain to catch up",
-        subtext: "You favour accommodation while Britain is weaker.",
+        subtext: "You favour accommodation while Britain is weaker, while stressing the need to ramp up rearmament.",
         effects: { readiness: +5, public: -4, trust: +4, allies: -1, czech: -1 },
         log: "You warn colleagues that Britain cannot yet risk a continental war.",
         next: "sudeten_crisis"
@@ -237,7 +296,7 @@ const nodes = {
       {
         text: "Signal to France and Prague that Britain may stand firm, but avoid explicit guarantees.",
         subtext: "You keep options open and test allied resolve.",
-        effects: { readiness: +4, public: +2, trust: -3, allies: +4, czech: +2 },
+        effects: { readiness: +4, public: +2, trust: -3, allies: +1, czech: +0 },
         log: "You send ambiguous messages: encouraging Prague, but stopping short of firm commitments.",
         next: "soviet_option"
       },
@@ -251,7 +310,7 @@ const nodes = {
       {
          text: "Explore a broader front: discreetly sound out the Soviet Union.",
           subtext: "You look for a larger deterrent coalition, despite ideological misgivings.",
-          effects: { readiness: +6, public: +3, trust: -5, allies: +5, czech: +3 },
+          effects: { readiness: +6, public: +3, trust: -7, allies: +5, czech: +3 },
           log: "Initial Soviet signals suggest interest, but mutual suspicion is deep.",
           next: "soviet_option",
           setFlag: "exploredUSSR"
@@ -279,7 +338,7 @@ const nodes = {
       {
         text: "Secretly include the USSR in contingency planning, even if public rhetoric is cautious.",
         subtext: "You try to square domestic politics with strategic necessity.",
-        effects: { readiness: +2, public: -1, trust: -2, allies: +5, czech: +4 },
+        effects: { readiness: +1, public: -1, trust: -2, allies: +5, czech: +4 },
         log: "You quietly ask the Chiefs of Staff how Soviet participation could alter the balance.",
         next: "public_opinion"
       },
@@ -325,7 +384,7 @@ ussr_conditional_1938: {
       {
         text: "Emphasise the horrors of modern war and present peace as the paramount objective.",
         subtext: "You align strongly with pacifist sentiment.",
-        effects: { readiness: -2, public: -6, trust: +20, allies: -3, czech: -5 },
+        effects: { readiness: -1, public: -2, trust: +10, allies: -3, czech: -5 },
         log: "You speak movingly about air raids and civilian casualties; crowds cheer, strategists worry.",
         next: "munich_choice"
       },
@@ -339,7 +398,7 @@ ussr_conditional_1938: {
       {
         text: "Warn that further concessions may only embolden aggression despite the costs of war.",
         subtext: "You prepare the public for possible confrontation.",
-        effects: { readiness: +4, public: +4, trust: -14, allies: +3, czech: +4 },
+        effects: { readiness: +4, public: +4, trust: -8, allies: +3, czech: +4 },
         log: "You are accused of 'warming to war', but hawks in the Cabinet feel vindicated.",
         next: "munich_choice"
       }
@@ -360,14 +419,14 @@ ussr_conditional_1938: {
       {
         text: "Accept the Munich terms, framing them as the price of 'peace for our time'.",
         subtext: "You bet that satisfying territorial claims will stabilise Europe.",
-        effects: { readiness: +5, public: +4, trust: +25, allies: -3, czech: -40 },
+        effects: { readiness: +3, public: +4, trust: +25, allies: -3, czech: -40 },
         log: "You sign the agreement, believing you have averted immediate catastrophe.",
         next: "ending_appeasement"
       },
       {
         text: "Accept in principle, but insist on stronger guarantees for what remains of Czechoslovakia.",
         subtext: "You try to bind Hitler and reassure allies simultaneously.",
-        effects: { readiness: +3, public: +1, trust: +15, allies: +4, czech: -30 },
+        effects: { readiness: +1, public: +1, trust: +15, allies: +4, czech: -30 },
         log: "You return with an agreement and solemn pledges to defend the new status quo.",
         next: "ending_conditional"
       },
@@ -539,7 +598,7 @@ if (gameState.currentNodeId === "ussr_conditional_1938") {
             troops to assist Czechoslovakia due to <strong>Poland and Romania refusing transit rights</strong>. 
             Yet, sensing strong Anglo–French resolve, Moscow signals something unprecedented: 
             <strong>the USSR is willing to declare war on Germany</strong> if Germany attacks Czechoslovakia 
-            and the Western powers also declare war. Soviet air support would be coordinated from afar, adding 
+            and the Western powers also declare war. Soviet air support, the VVS, would also be dispatched to support Czechoslovakia, adding 
             pressure on Berlin.
           </p>
         `;
@@ -684,9 +743,8 @@ Write 3–4 paragraphs of historically grounded alternate-history analysis that:
   choiceContainer.innerHTML = `
     <div class="ending-title">Simulation Complete</div>
 
-    <p><strong>Instructions on How to Obtain Your Custom Narrative</strong></p>
-    <p>You can obtain a detailed ending narrative by doing the following.  
-       Copy the prompt below and paste it into an online large language model (ChatGPT, Claude, etc.):</p>
+    <p><strong>YOU CAN OBTAIN A CUSTOM NARRATIVE!</strong></p>
+    <p>You can obtain a very detailed narrative for the choices that you have made by copying the content in the box below (simply ctrl+A and copy, or use the button "Copy Prompt to Clipboard") and sending it to any large language AI model (ChatGPT, Claude, Deepseek etc.):</p>
 
     <textarea id="manual-ai-prompt" class="manual-prompt-box" style="
       width: 100%;
