@@ -56,7 +56,7 @@ let llmError = null;
 
 async function initLocalLLM() {
   try {
-const modelId = "TinyLlama-1.1B-Chat-v0.4";
+const modelId = "gpt2-medium";
 
     console.time("LLM init");
     llm = await webllm.CreateMLCEngine(modelId, {
