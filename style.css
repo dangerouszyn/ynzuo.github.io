@@ -312,6 +312,20 @@ body {
   margin-bottom: 6px;
 }
 
+.choice-disabled {
+  opacity: 0.45;
+  cursor: not-allowed !important;
+  background: #3a3a3a !important;
+  border: 1px solid #666 !important;
+}
+
+.req-note {
+  display: block;
+  font-size: 0.75rem;
+  margin-top: 3px;
+  color: #fca5a5; /* soft red */
+}
+
 /* Responsive tweaks */
 @media (max-width: 900px) {
   .app-layout {
