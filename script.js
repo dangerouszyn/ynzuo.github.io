@@ -5,7 +5,7 @@ const gameState = {
   stats: {
     readiness: 45,
     public: 40,
-    trust: 65,
+    trust: 45,
     allies: 50,
     czech: 55
   },
@@ -22,8 +22,8 @@ const gameState = {
 function applyPostEndingConsequences(endingId, stats) {
   if (endingId === "ending_appeasement") {
     // Historical consequences (1939 trajectory)
-    stats.czech = 0;                 // Complete dismemberment
-    stats.readiness = clamp(stats.readiness + 20, 0, 100);  
+    stats.czech = 0;                 // Complete lose of forts and demoralisation
+    stats.readiness = clamp(stats.readiness + 25, 0, 100);  
     stats.trust = clamp(stats.trust -10, 0, 100);          
     stats.allies = clamp(stats.allies - 10, 0, 100);        
     stats.public = clamp(stats.public + 50, 0, 100);        
@@ -32,10 +32,10 @@ function applyPostEndingConsequences(endingId, stats) {
   if (endingId === "ending_conditional") {
     // Partial appeasement → early war model
     stats.czech = clamp(stats.czech, 0, 100);  // Prague loses fortification
-    stats.readiness = clamp(stats.readiness + 8, 0, 100);
+    stats.readiness = clamp(stats.readiness + 15, 0, 100);
     stats.trust = clamp(stats.trust +5, 0, 100);  
-    stats.allies = clamp(stats.allies + 10, 0, 100); 
-    stats.public = clamp(stats.public + 25, 0, 100);   
+    stats.allies = clamp(stats.allies -0, 0, 100); 
+    stats.public = clamp(stats.public + 35, 0, 100);   
   }
 
   if (endingId === "ending_confrontation") {
@@ -72,7 +72,7 @@ async function initLocalLLM() {
 
 function calculateDeterrenceProbability(stats) {
   let score =
-      stats.readiness * 0.20 +
+      stats.readiness * 0.15 +
       stats.allies    * 0.55 +
       stats.public* 0 +
       stats.trust* 0 +
@@ -86,8 +86,8 @@ function calculateWarWinProbability(stats) {
       stats.readiness * 0.45 +
       stats.allies    * 0.35 +
       (stats.public-50)* 0.4 +
-      (stats.trust-50)* 0.4 +
-      stats.czech     * 0.3;
+      (stats.trust-50)* 0.5 +
+      stats.czech     * 0.4;
 
   return Math.max(0, Math.min(100, Math.round(scoretwo)));
 }
@@ -128,7 +128,7 @@ Write 3–4 paragraphs of historically grounded narrative that logically explain
 const nodes = {
   intro_1937: {
     id: "intro_1937",
-    year: "Early 1937",
+    year: "28th May 1937",
     title: "A New Prime Minister, Old European Fears",
     tags: ["Context", "Domestic Politics"],
     description: `
@@ -163,7 +163,7 @@ const nodes = {
   
   rearmament_budget_1937: {
     id: "rearmament_budget_1937",
-    year: "Late 1937",
+    year: "Mid 1937",
     title: "The Treasury’s Stand: Rearmament vs Fiscal Orthodoxy",
     tags: ["Economy", "Rearmament", "Domestic Politics"],
     description: `
@@ -189,7 +189,7 @@ const nodes = {
           czech: 0 
         },
         log: "You approve aggressive expenditure increases. Treasury officials warn of future economic strain.",
-        next: "anschluss_1938"
+        next: "china_crisis_1937"
       },
       {
         text: "Side with the Treasury and preserve strict budget discipline.",
@@ -202,7 +202,7 @@ const nodes = {
           czech: -1 
         },
         log: "You reaffirm Treasury control. Defence planners quietly worry about lost time.",
-        next: "anschluss_1938"
+        next: "china_crisis_1937"
       },
       {
         text: "Pursue Chamberlain’s balancing act: controlled expansion financed by selective taxes and borrowing.",
@@ -210,14 +210,73 @@ const nodes = {
         effects: { 
           readiness: +6, 
           public: 0, 
-          trust: +6, 
+          trust: +4, 
           allies: +2, 
           czech: 0 
         },
         log: "Careful fiscal manoeuvring keeps sterling steady while allowing meaningful rearmament.",
-        next: "anschluss_1938"
+        next: "china_crisis_1937"
       }
     ]
+},
+  
+  china_crisis_1937: {
+  id: "china_crisis_1937",
+  year: "October 1937",
+  title: "Shockwaves from the Far East: Japan’s War in China",
+  tags: ["Empire", "Public Opinion", "Rearmament", "Foreign Policy"],
+  description: `
+    Japan’s full-scale invasion of China has sent tremors through the Empire. Reports from Shanghai describe 
+    <strong>indiscriminate bombing, attacks on British property, and alarming Japanese confidence</strong>.
+    
+    The Chiefs of Staff warn that Britain cannot simultaneously deter Germany, Italy, and Japan. 
+    Public sympathy for China is rising, yet so is fear of imperial overextension. 
+    The Cabinet is split over how strongly to frame this crisis.
+
+    You must decide what <strong>public message</strong> the government will project as Britain digests the implications 
+    of the unfolding Far Eastern war.
+  `,
+  choices: [
+    {
+      text: "Warn the nation that Japan has become a grave threat to the Empire.",
+      subtext: "Focusing on Japan may fit British interests, but European allies lose confidence as they suspect Britain will focus less on Germany.",
+      effects: { 
+        readiness: +1, 
+        public: +4, 
+        trust: +2, 
+        allies: -5, 
+        czech: 0 
+      },
+      log: "You caution that Japan could strike British interests from Hong Kong to Singapore. France grows uneasy.",
+      next: "anschluss_1938"
+    },
+    {
+      text: "Emphasise that the crisis proves Britain must rearm faster across all theatres.",
+      subtext: "You use the Far Eastern danger to justify accelerated preparation.",
+      effects: { 
+        readiness: +3, 
+        public: +2, 
+        trust: -2, 
+        allies: +1, 
+        czech: 0 
+      },
+      log: "You argue that only a stronger Britain can manage simultaneous threats. Treasury officials wince.",
+      next: "anschluss_1938"
+    },
+    {
+      text: "Reassure the public that the Empire remains strong and united, and Britain will manage the crisis calmly.",
+      subtext: "You aim to steady nerves and preserve confidence without provoking alarm.",
+      effects: { 
+        readiness: -2, 
+        public: -2, 
+        trust: +8, 
+        allies: -1, 
+        czech: 0 
+      },
+      log: "You project an image of imperial stability despite fundamental weakness. Public confidence stabilises as newspapers praise your composure, but this could undermine preparedness slightly.",
+      next: "anschluss_1938"
+    }
+  ]
 },
 
   anschluss_1938: {
@@ -268,7 +327,7 @@ const nodes = {
       {
         text: "Assume worst-case German strength; more time is needed for Britain to catch up",
         subtext: "You favour accommodation while Britain is weaker, while stressing the need to ramp up rearmament.",
-        effects: { readiness: +5, public: -4, trust: +4, allies: -1, czech: -1 },
+        effects: { readiness: +5, public: -4, trust: -4, allies: -1, czech: -1 },
         log: "You warn colleagues that Britain cannot yet risk a continental war.",
         next: "sudeten_crisis"
       },
@@ -310,7 +369,7 @@ const nodes = {
       {
          text: "Explore a broader front: discreetly sound out the Soviet Union.",
           subtext: "You look for a larger deterrent coalition, despite ideological misgivings.",
-          effects: { readiness: +6, public: +3, trust: -7, allies: +5, czech: +3 },
+          effects: { readiness: +6, public: +3, trust: -4, allies: +5, czech: +3 },
           log: "Initial Soviet signals suggest interest, but mutual suspicion is deep.",
           next: "soviet_option",
           setFlag: "exploredUSSR"
@@ -345,7 +404,7 @@ const nodes = {
       {
         text: "Openly propose a grand anti-aggression front including the USSR.",
         subtext: "You gamble that clarity of deterrent will outweigh ideological discomfort.",
-        effects: { readiness: +3, public: -3, trust: -8, allies: +7, czech: +5 },
+        effects: { readiness: +3, public: -3, trust: -6, allies: +7, czech: +5 },
         log: "Some Conservatives revolt; Labour applauds; Hitler fumes at the rhetoric.",
         next: "ussr_conditional_1938"
       }
@@ -405,40 +464,42 @@ ussr_conditional_1938: {
     ]
   },
 
-  munich_choice: {
-    id: "munich_choice",
-    year: "End of September 1938",
-    title: "The Munich Decision",
-    tags: ["Critical Choice"],
-    description: `
-      Hitler invites you, Daladier, and Mussolini to Munich. No Czech representative is at the table.
-      You must decide your posture: is this the last concession to preserve peace, or a line that must not be crossed?
-      Your previous choices have shaped Britain’s readiness, alliances, and moral position.
-    `,
-    choices: [
-      {
-        text: "Accept the Munich terms, framing them as the price of 'peace for our time'.",
-        subtext: "You bet that satisfying territorial claims will stabilise Europe.",
-        effects: { readiness: +3, public: +4, trust: +25, allies: -3, czech: -40 },
-        log: "You sign the agreement, believing you have averted immediate catastrophe.",
-        next: "ending_appeasement"
-      },
-      {
-        text: "Accept in principle, but insist on stronger guarantees for what remains of Czechoslovakia.",
-        subtext: "You try to bind Hitler and reassure allies simultaneously.",
-        effects: { readiness: +1, public: +1, trust: +15, allies: +4, czech: -30 },
-        log: "You return with an agreement and solemn pledges to defend the new status quo.",
-        next: "ending_conditional"
-      },
-      {
-        text: "Refuse to sign unless Czechoslovakia is directly represented and key fortifications remain.",
-        subtext: "You risk immediate crisis and potential war.",
-        effects: { readiness: -2, public: -4, trust: -10, allies: +8, czech: +2 },
-        log: "You stiffen in the negotiations; tempers flare as the prospect of war looms.",
-        next: "ending_confrontation"
-      }
-    ]
-  },
+ munich_choice: {
+  id: "munich_choice",
+  year: "End of September 1938",
+  title: "The Munich Decision",
+  tags: ["Critical Choice"],
+  description: `
+    Hitler invites you, Daladier, and Mussolini to Munich. No Czech representative is at the table.
+    Your previous choices have shaped Britain’s readiness, alliances, and moral position.
+  `,
+  choices: [
+    {
+      text: "Accept the Munich terms, framing them as the price of 'peace for our time'.",
+      subtext: "You bet that satisfying territorial claims will stabilise Europe.",
+      effects: { readiness: +3, public: +4, trust: +25, allies: -3, czech: -40 },
+      log: "You sign the agreement, believing you have averted immediate catastrophe.",
+      next: "ending_appeasement",
+      requirementPublic: 0   // No requirement
+    },
+    {
+      text: "Accept in principle, but insist on stronger guarantees.",
+      subtext: "You try to bind Hitler and reassure allies simultaneously.",
+      effects: { readiness: +1, public: +1, trust: +15, allies: +4, czech: -50 },
+      log: "You return with an agreement and solemn pledges to defend the new status quo.",
+      next: "ending_conditional",
+      requirementPublic: 30  // Needs at least 30 public support for firmness
+    },
+    {
+      text: "Refuse to sign unless Czechoslovakia is represented and fortifications remain.",
+      subtext: "You risk immediate crisis and possible war.",
+      effects: { readiness: -2, public: -4, trust: -5, allies: +8, czech: +2 },
+      log: "You stiffen in the negotiations; tempers flare as the prospect of war looms.",
+      next: "ending_confrontation",
+      requirementPublic: 50  // Needs at least 50 public support for firmness
+    }
+  ]
+},
 
   ending_appeasement: {
     id: "ending_appeasement",
@@ -598,7 +659,7 @@ if (gameState.currentNodeId === "ussr_conditional_1938") {
             troops to assist Czechoslovakia due to <strong>Poland and Romania refusing transit rights</strong>. 
             Yet, sensing strong Anglo–French resolve, Moscow signals something unprecedented: 
             <strong>the USSR is willing to declare war on Germany</strong> if Germany attacks Czechoslovakia 
-            and the Western powers also declare war. Soviet air support, the VVS, would also be dispatched to support Czechoslovakia, adding 
+            and the Western powers also declare war. Limited Soviet air support, as part of the VVS, would also be dispatched to support Czechoslovakia, adding 
             pressure on Berlin.
           </p>
         `;
@@ -607,13 +668,13 @@ if (gameState.currentNodeId === "ussr_conditional_1938") {
             readiness: +1,
             allies: +6,
             public: +6,
-            trust: -3,
+            trust: +5,
             czech: +25
         };
 
         dynamicChoiceText = "Acknowledge the Soviet commitment and fold it into Allied planning.";
         dynamicSubtext = "Soviet readiness strengthens the deterrent but complicates Western politics.";
-        dynamicLog = "While the Soviet Union still has no transit rights through Poland and Romania, they commit to declare war on Germany and sending the VVS to Czechoslovakia to help if both France and Britain declares war should Germany invades Czechoslovakia.";
+        dynamicLog = "While the Soviet Union still has no transit rights through Poland and Romania, they commit to declare war on Germany and sending parts of the VVS to Czechoslovakia to help if both France and Britain declares war in the event of German invasion of Czechoslovakia.";
 
     }
     // WEAK ALLIED CONFIDENCE RESPONSE
@@ -689,24 +750,29 @@ if (node.isEnding) {
 if (!llmReady || llmError) {
   // Construct a full offline prompt
   const manualPrompt = `
-You are generating an alternate-history analysis of British crisis decision-making in 1937–1938. 
+You are generating an analysis of British crisis decision-making in 1937–1938. 
 The simulation ends in one of three historically grounded scenarios. 
 
-INTERPRETATION RULES FOR PROBABILITIES
+INTERPRETATION RULES
 -------------------------------------
-The meaning of "deterrence probability" and "war victory probability" depends on the specific ending:
+The meaning of "deterrence probability", "war victory probability" and the five statistics of readiness, public, trust, allies and czech depends on the specific ending:
 
 1. ending_appeasement (Historical Munich Agreement, 1938)
-   - Deterrence probability = the likelihood that Hitler is deterred from occupying the remainder of Czechoslovakia in March 1939 (historically, he was NOT deterred).
+   - Under this scenario, tell the user that as a result of their decisions, Czechoslovakia will lose all border fortification, and without western guarantees it will assume complete abandonment and not resist, so Germany WILL invade as in historically and capture the rest of the country bloodlessly in Early 1939.
+   - Deterrence probability = the likelihood that Hitler is deterred from trying to invade Poland, thinking that Britain and France would fold again. (historically, he was NOT deterred； if deterrence probability is not more than 50%, take it that risk-prone Hitler will not be deterred).
    - War victory probability = if deterrence fails, the probability that Britain will end up winning in the historical war timeline beginning after Germany invades Poland in 1939, even if her allies do not make it.
+   - Under this scenario, all statistics reflect Sep 1939 conditions.
 
 2. ending_conditional (Conditional Munich + Guarantees)
+   - Under this scenario, tell the user that as a result of their decisions, Czechoslovakia will lose all border fortification, but now as there is western guarantees for what remains of the country, so it will attempt to resist any attempts of German takeover of the rest of the country.
    - Deterrence probability = probability Hitler is deterred from further dismembering Czechoslovakia after Munich due to firmer Anglo-French signalling.
    - War victory probability = if deterrence fails, the chance that Britain, France, and Czechoslovakia jointly prevail in an early war beginning in early 1939 BEFORE German full mobilisation.
+   - Under this scenario, all statistics reflect Early 1939 conditions.
 
 3. ending_confrontation (Rejection of Munich)
    - Deterrence probability = probability Hitler backs down from invading Czechoslovakia when faced with intact Czech border fortifications and a united Anglo-French stance (possibly with Soviet support).
    - War victory probability = if deterrence fails and war begins in late 1938, the chance that Britain + France + Czechoslovakia (plus any possible Soviet involvement depending on prior diplomacy) defeat Germany.
+   - Under this scenario, all statistics reflect conditions immediately after the agreement failed to be reached.
 
 END OF RULES
 
@@ -738,6 +804,7 @@ Write 3–4 paragraphs of historically grounded alternate-history analysis that:
 5. Discusses the implications for Czechoslovakia, France, Soviet diplomacy (if applicable), and long-term European stability.
 6. Uses the tone and analytical style of a professional historian war-gaming counterfactuals.
 7. Indicators are, respectively in sequence, Military Readiness, Public Support for Firmness, Public Support for Government, Unity with Allies (France & Others), Unity with Allies (France & Others). All are out of a maximum of 100.
+8. Comment on the very start how closely aligned the players' choices are to historical Chamberlain's decisions.
   `.trim();
 
   choiceContainer.innerHTML = `
@@ -832,21 +899,39 @@ console.timeEnd("AI ending generation");
 
   // Render choices
   choiceContainer.innerHTML = "";
-  (node.choices || []).forEach(choice => {
-    const btn = document.createElement("button");
-    btn.className = "choice-btn";
-    btn.innerHTML = `
-      <span class="choice-main">${choice.text}</span>
-      <span class="choice-sub">${choice.subtext || ""}</span>
-    `;
+(node.choices || []).forEach(choice => {
+  const btn = document.createElement("button");
+  btn.className = "choice-btn";
+
+  const required = choice.requirementPublic ?? 0;
+  const current = gameState.stats.public;
+
+  // Render button normally
+  btn.innerHTML = `
+    <span class="choice-main">${choice.text}</span>
+    <span class="choice-sub">${choice.subtext || ""}</span>
+    ${required > 0 ? `<span class="req-note">(Requires Public Firmness ≥ ${required})</span>` : ""}
+  `;
+
+  // Disable if requirement not met
+  if (current < required) {
+    btn.classList.add("choice-disabled");
+    btn.disabled = true;
+
+    // Add hover warning
+    btn.title = `Public Support for Firmness is too low (${current}/100). Required: ${required}.`;
+  } else {
+    // Normal functioning button
     btn.addEventListener("click", () => {
       applyChoice(choice, node);
       renderStats();
       renderLog();
       renderNode();
     });
-    choiceContainer.appendChild(btn);
-  });
+  }
+
+  choiceContainer.appendChild(btn);
+});
     // 🔥 Restore choices after rendering
   if (gameState.currentNodeId === "soviet_option") {
       node.choices = originalChoices;
@@ -861,7 +946,7 @@ function restartGame() {
   gameState.stats = {
     readiness: 45,
     public: 40,
-    trust: 65,
+    trust: 45,
     allies: 50,
     czech: 55
   };
