@@ -411,3 +411,8 @@ body.loss-flash #lossFlashOverlay {
   font-size: 1rem;
   cursor: pointer;
 }
+
+.orientation-modal {
+  max-width: 420px;
+  text-align: center;
+}
