@@ -81,9 +81,19 @@ body {
   transition: width 0.4s ease;
 }
 
+.flash-green {
+  background: #4ade80 !important;   /* bright neon green */
+  filter: brightness(1.6);           /* makes the glow pop */
+}
+
+.flash-red {
+  background: #f87171 !important;    /* bright neon red */
+  filter: brightness(1.6);
+}
+
 /* Colourful stat bars */
 .stat-bar.readiness {
-  background: linear-gradient(90deg, #22c55e, #4ade80);
+  background: linear-gradient(90deg, #166534, #15803d);
 }
 
 .stat-bar.public {
@@ -339,4 +349,65 @@ body {
   .game-panel {
     order: 1;
   }
+}
+
+/* Loss flash overlay */
+#lossFlashOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(200, 0, 0, 0.0);
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0;
+}
+
+body.loss-flash #lossFlashOverlay {
+  opacity: 1;
+  animation: lossFlashPulse 900ms ease-in-out 1;
+}
+
+@keyframes lossFlashPulse {
+  0%   { background: rgba(200, 0, 0, 0.00); }
+  25%  { background: rgba(200, 0, 0, 0.20); }
+  55%  { background: rgba(200, 0, 0, 0.12); }
+  100% { background: rgba(200, 0, 0, 0.00); }
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: #1e1e1e;
+  color: #f0f0f0;
+  padding: 20px 22px;
+  max-width: 560px;
+  width: 90%;
+  max-height: 70vh;          /* <-- limits vertical size */
+  overflow-y: auto;          /* <-- enables scrolling */
+  border-radius: 8px;
+  line-height: 1.45;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+}
+
+.modal-content h2,
+.modal-content h3 {
+  margin-top: 0;
+}
+
+.modal-content button {
+  margin-top: 16px;
+  padding: 10px 18px;
+  font-size: 1rem;
+  cursor: pointer;
 }
