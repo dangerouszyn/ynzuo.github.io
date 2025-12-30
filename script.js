@@ -3,7 +3,7 @@ const gameState = {
   currentNodeId: "intro_1937",
 
   stats: {
-    readiness: 45,
+    readiness: 35,
     public: 40,
     trust: 45,
     allies: 50,
@@ -19,11 +19,31 @@ const gameState = {
   }
 };
 
+function showTutorial() {
+  document.getElementById("tutorialModal").classList.remove("hidden");
+}
+
+function hideTutorial() {
+  document.getElementById("tutorialModal").classList.add("hidden");
+}
+
+document.getElementById("closeTutorialBtn").addEventListener("click", () => {
+  hideTutorial();
+});
+
+window.addEventListener("load", () => {
+  const hasSeenTutorial = sessionStorage.getItem("hasSeenTutorial");
+  if (!hasSeenTutorial) {
+    showTutorial();
+    sessionStorage.setItem("hasSeenTutorial", "true");
+  }
+});
+
 function applyPostEndingConsequences(endingId, stats) {
   if (endingId === "ending_appeasement") {
     // Historical consequences (1939 trajectory)
     stats.czech = 0;                 // Complete lose of forts and demoralisation
-    stats.readiness = clamp(stats.readiness + 25, 0, 100);  
+    stats.readiness = clamp(stats.readiness + 35, 0, 100);  
     stats.trust = clamp(stats.trust -10, 0, 100);          
     stats.allies = clamp(stats.allies - 10, 0, 100);        
     stats.public = clamp(stats.public + 50, 0, 100);        
@@ -500,6 +520,18 @@ ussr_conditional_1938: {
     }
   ]
 },
+  
+  ending_resignation: {
+  id: "ending_resignation",
+  year: "Domestic Crisis",
+  title: "Mass Protests; Public Demands Your Resignation",
+  tags: ["Ending", "Domestic Politics"],
+  description: `
+  <strong>You have lost the game.</strong>
+    Following a series of unpopular actions, the latest move you took has finally collapsed public confidence in the government. Mass demonstrations gather outside Parliament, newspapers call for your resignation, and cabinet unity fractures. You are no longer able to govern with authority. 
+  `,
+  isEnding: true
+},
 
   ending_appeasement: {
     id: "ending_appeasement",
@@ -540,6 +572,34 @@ ussr_conditional_1938: {
     isEnding: true
   }
 };
+
+function checkForResignationLoss(prevNode, choice) {
+  // Threshold requested by you
+  const THRESHOLD = 30;
+
+  // Avoid triggering if we're already at an ending
+  const currentNode = nodes[gameState.currentNodeId];
+  if (currentNode && currentNode.isEnding) return false;
+
+  // If government support falls below threshold, force a loss ending
+  if (gameState.stats.trust < THRESHOLD) {
+    // Add an explicit log entry (optional but strongly recommended)
+    gameState.history.push({
+      turn: gameState.turn,
+      nodeTitle: "Domestic Crisis",
+      choiceText: "Public protest escalates beyond control",
+      choiceSubtext: "",
+      log: `Public support for the government fell below ${THRESHOLD}/100 after: "${choice.text}". 
+            Crowds demand your resignation; Cabinet authority collapses.`
+    });
+
+      gameState.currentNodeId = "ending_resignation";
+      triggerLossFlash();
+      return true;
+  }
+
+  return false;
+}
 
 // Utility: clamp values into [0, 100] range
 function clamp(val, min, max) {
@@ -585,6 +645,17 @@ function renderStats() {
     const bar = document.getElementById(idBar);
     const val = document.getElementById(idVal);
     if (!bar || !val) return;
+    
+  // --- NEW: detect change direction ---
+  const prevValue = parseInt(bar.dataset.prev || 0, 10);
+  bar.dataset.prev = value;  // store new value for next render
+      if (value > prevValue) {
+    bar.classList.add("flash-green");
+    setTimeout(() => bar.classList.remove("flash-green"), 400);
+  } else if (value < prevValue) {
+    bar.classList.add("flash-red");
+    setTimeout(() => bar.classList.remove("flash-red"), 400);
+  }
     bar.style.width = `${value}%`;
     val.textContent = `${value}/100`;
   };
@@ -760,19 +831,39 @@ The meaning of "deterrence probability", "war victory probability" and the five 
 1. ending_appeasement (Historical Munich Agreement, 1938)
    - Under this scenario, tell the user that as a result of their decisions, Czechoslovakia will lose all border fortification, and without western guarantees it will assume complete abandonment and not resist, so Germany WILL invade as in historically and capture the rest of the country bloodlessly in Early 1939.
    - Deterrence probability = the likelihood that Hitler is deterred from trying to invade Poland, thinking that Britain and France would fold again. (historically, he was NOT deterred； if deterrence probability is not more than 50%, take it that risk-prone Hitler will not be deterred).
-   - War victory probability = if deterrence fails, the probability that Britain will end up winning in the historical war timeline beginning after Germany invades Poland in 1939, even if her allies do not make it.
-   - Under this scenario, all statistics reflect Sep 1939 conditions.
+   - War victory probability = if deterrence fails, the probability that Britain will end up winning in what will end up being similar to the historical World War 2 timeline beginning after Germany invades Poland in 1939, even if her allies do not make it.
+   - Under this scenario, all statistics like readiness, public opinion, allied support etc reflect Sep 1939 conditions.
 
 2. ending_conditional (Conditional Munich + Guarantees)
    - Under this scenario, tell the user that as a result of their decisions, Czechoslovakia will lose all border fortification, but now as there is western guarantees for what remains of the country, so it will attempt to resist any attempts of German takeover of the rest of the country.
    - Deterrence probability = probability Hitler is deterred from further dismembering Czechoslovakia after Munich due to firmer Anglo-French signalling.
    - War victory probability = if deterrence fails, the chance that Britain, France, and Czechoslovakia jointly prevail in an early war beginning in early 1939 BEFORE German full mobilisation.
-   - Under this scenario, all statistics reflect Early 1939 conditions.
+   - Under this scenario, all statistics like readiness, public opinion, allied support etc reflect Early 1939 conditions.
 
 3. ending_confrontation (Rejection of Munich)
    - Deterrence probability = probability Hitler backs down from invading Czechoslovakia when faced with intact Czech border fortifications and a united Anglo-French stance (possibly with Soviet support).
    - War victory probability = if deterrence fails and war begins in late 1938, the chance that Britain + France + Czechoslovakia (plus any possible Soviet involvement depending on prior diplomacy) defeat Germany.
-   - Under this scenario, all statistics reflect conditions immediately after the agreement failed to be reached.
+   - Under this scenario, all statistics like readiness, public opinion, allied support etc reflect conditions immediately after the agreement failed to be reached.
+   
+4. ending_resignation (Domestic Collapse / Resignation Loss)
+
+Under this scenario, tell the user that the simulation terminates because Cabinet authority and parliamentary legitimacy fail: the government cannot execute a coherent foreign-policy line.
+
+Interpret the deterrence probability and war victory probability as counterfactual estimates (counterfactual = conditional on the same strategic line continuing under a stable government). Explicitly state that these probabilities are no longer directly actionable because the player’s government has fallen.
+
+Treat the five statistics as describing the immediate political-strategic state at the moment of collapse (late-1938 context unless your timeline states otherwise):
+readiness = the rearmament / preparedness baseline that the successor government inherits.
+public support for firmness = mass willingness to endure confrontation for security aims (distinct from support for the government itself).
+public support for government = regime durability / governing mandate (this is the binding constraint that triggers resignation).
+allies = cohesion with France and other partners.
+czech = the credibility and practical viability of Czechoslovakia’s resistance posture given the diplomatic context.
+The analysis must therefore pivot to: (i) why domestic legitimacy collapsed given the player’s decisions; (ii) what kind of successor government is plausible (e.g., National Government, Conservative replacement leader, Labour-led coalition), and (iii) how that succession likely alters deterrence signals and coalition cohesion.
+
+When assessing “is Hitler likely to be deterred,” separate two channels:
+the underlying strategic balance (as reflected in the counterfactual deterrence probability), and
+the signal credibility shock (credibility shock = loss of perceived reliability caused by government collapse), which tends to reduce deterrence in the short run even if readiness/allies are strong.
+
+Even if deterrence and victory probabilities are high, the domestic-loss condition means policy cannot be executed; analyse the strategic consequences of political turnover.
 
 END OF RULES
 
@@ -803,8 +894,9 @@ Write 3–4 paragraphs of historically grounded alternate-history analysis that:
 4. If war occurs, evaluates the likely military balance and coalition prospects.
 5. Discusses the implications for Czechoslovakia, France, Soviet diplomacy (if applicable), and long-term European stability.
 6. Uses the tone and analytical style of a professional historian war-gaming counterfactuals.
-7. Indicators are, respectively in sequence, Military Readiness, Public Support for Firmness, Public Support for Government, Unity with Allies (France & Others), Unity with Allies (France & Others). All are out of a maximum of 100.
+7. Indicators are, respectively in sequence, Military Readiness, Public Support for Firmness, Public Support for Government, Unity with Allies (France & Others). All are out of a maximum of 100.
 8. Comment on the very start how closely aligned the players' choices are to historical Chamberlain's decisions.
+9. In every instance, also qualify at the end the circumstances Chamberlain faced and hindsights that Chamberlain could not have known, like grossly misleading intelligence reports vastly exaggerating German power in 1938, inability to accurately assess Soviet intentions, mis-characterisation of Hitler as a leader with only limited revisionist aims and so on, such that the historical Chamberlain could not have easily chosen the "better" paths and instead went down what occurred historically.
   `.trim();
 
   choiceContainer.innerHTML = `
@@ -921,13 +1013,18 @@ console.timeEnd("AI ending generation");
     // Add hover warning
     btn.title = `Public Support for Firmness is too low (${current}/100). Required: ${required}.`;
   } else {
-    // Normal functioning button
-    btn.addEventListener("click", () => {
-      applyChoice(choice, node);
-      renderStats();
-      renderLog();
-      renderNode();
-    });
+btn.addEventListener("click", () => {
+  applyChoice(choice, node);
+
+  // Update UI to reflect new stats first (matches your wording precisely)
+  renderStats();
+  renderLog();
+
+  // Now check for resignation loss; if triggered, go straight to the ending node
+  checkForResignationLoss(node, choice);
+
+  renderNode();
+});
   }
 
   choiceContainer.appendChild(btn);
@@ -938,13 +1035,24 @@ console.timeEnd("AI ending generation");
   }
 }
 
+function triggerLossFlash() {
+  // Prevent repeated flashing if renderNode() is called multiple times
+  if (gameState._lossFlashTriggered) return;
+  gameState._lossFlashTriggered = true;
 
+  document.body.classList.add("loss-flash");
+
+  // Remove the class after animation finishes (keeps DOM clean)
+  window.setTimeout(() => {
+    document.body.classList.remove("loss-flash");
+  }, 950);
+}
 
 // Restart the simulation
 function restartGame() {
   gameState.currentNodeId = "intro_1937";
   gameState.stats = {
-    readiness: 45,
+    readiness: 35,
     public: 40,
     trust: 45,
     allies: 50,
@@ -970,7 +1078,10 @@ document.addEventListener("DOMContentLoaded", () => {
   initLocalLLM();
 
   const restartBtn = document.getElementById("restart-btn");
-  restartBtn.addEventListener("click", restartGame);
+restartBtn.addEventListener("click", () => {
+  restartGame();
+  //showTutorial();
+});
 
   renderStats();
   renderLog();
