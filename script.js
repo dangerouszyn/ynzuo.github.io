@@ -1080,7 +1080,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const restartBtn = document.getElementById("restart-btn");
 restartBtn.addEventListener("click", () => {
   restartGame();
-  //showTutorial();
+  showTutorial();
 });
 
   renderStats();
