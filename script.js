@@ -2,7 +2,7 @@
 const gameState = {
   currentNodeId: "intro_1937",
 
-  stats: {
+  stats: { //variable setups
     readiness: 35,
     public: 40,
     trust: 45,
