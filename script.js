@@ -27,8 +27,9 @@ function hideTutorial() {
   document.getElementById("tutorialModal").classList.add("hidden");
 }
 
-document.getElementById("closeTutorialBtn").addEventListener("click", () => {
-  hideTutorial();
+document.addEventListener("DOMContentLoaded", () => {
+  const closeBtn = document.getElementById("closeTutorialBtn");
+  if (closeBtn) closeBtn.addEventListener("click", hideTutorial);
 });
 
 window.addEventListener("load", () => {
