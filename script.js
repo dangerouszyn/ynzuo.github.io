@@ -19,6 +19,35 @@ const gameState = {
   }
 };
 
+function shouldShowOrientationModal() {
+  return window.innerWidth < 900 && window.matchMedia("(orientation: portrait)").matches;
+}
+
+function showOrientationModal() {
+  document.getElementById("orientationModal").classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+
+function hideOrientationModal() {
+  document.getElementById("orientationModal").classList.add("hidden");
+  document.body.style.overflow = "";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const closeBtn = document.getElementById("closeOrientationBtn");
+  if (closeBtn) closeBtn.addEventListener("click", hideOrientationModal);
+
+  if (shouldShowOrientationModal()) {
+    showOrientationModal();
+  }
+});
+
+window.addEventListener("orientationchange", () => {
+  if (!shouldShowOrientationModal()) {
+    hideOrientationModal();
+  }
+});
+
 function showTutorial() {
   document.getElementById("tutorialModal").classList.remove("hidden");
 }
