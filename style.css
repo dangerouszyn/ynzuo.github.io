@@ -412,7 +412,7 @@ body.loss-flash #lossFlashOverlay {
   cursor: pointer;
 }
 
-.orientation-modal {
+.orientation-modal { /* <-- mobile landscape popup */
   max-width: 420px;
   text-align: center;
 }
