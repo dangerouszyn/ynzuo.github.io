@@ -21,7 +21,9 @@
         <h2>Strategic Indicators</h2>
 
         <div class="stat-group">
-          <span class="stat-label">Military Readiness</span>
+          <span class="stat-label">
+            <span class="stat-icon">⚔️</span>
+            Military Readiness</span>
           <div class="stat-bar-outer">
             <div id="stat-readiness-bar" class="stat-bar readiness"></div>
           </div>
@@ -29,7 +31,9 @@
         </div>
 
         <div class="stat-group">
-          <span class="stat-label">Public Support for Firmness</span>
+          <span class="stat-label">
+            <span class="stat-icon">✊</span>
+            Public Support for Firmness</span>
           <div class="stat-bar-outer">
             <div id="stat-public-bar" class="stat-bar public"></div>
           </div>
@@ -37,7 +41,9 @@
         </div>
 
         <div class="stat-group">
-          <span class="stat-label">Public Support for Government</span>
+          <span class="stat-label">
+            <span class="stat-icon">❤️</span>
+            Public Support for Government</span>
           <div class="stat-bar-outer">
             <div id="stat-trust-bar" class="stat-bar trust"></div>
           </div>
@@ -45,7 +51,9 @@
         </div>
 
         <div class="stat-group">
-          <span class="stat-label">Unity with Allies (France & Others)</span>
+          <span class="stat-label">
+            <span class="stat-icon">🤝</span>
+            Unity with Allies (France & Others)</span>
           <div class="stat-bar-outer">
             <div id="stat-allies-bar" class="stat-bar allies"></div>
           </div>
@@ -53,7 +61,9 @@
         </div>
 
         <div class="stat-group">
-          <span class="stat-label">Security of Czechoslovakia</span>
+          <span class="stat-label">
+            <span class="stat-icon">🛡️</span>
+            Security of Czechoslovakia</span>
           <div class="stat-bar-outer">
             <div id="stat-czech-bar" class="stat-bar czech"></div>
           </div>
@@ -92,5 +102,32 @@
   </div>
 
   <script src="script.js"></script>
+  <div id="lossFlashOverlay"></div>
+  <div id="tutorialModal" class="modal hidden">
+  <div class="modal-content">
+    <h2>How This Simulation Works</h2>
+
+    <p>
+      You are making Cabinet-level decisions for Britain in 1937–1938, ending in a decision on the Munich Agreement.
+      Each decision alters several underlying strategic and political variables.
+      Outcomes depend on their interaction over time, not on any single choice.
+    </p>
+
+    <h3>The Five Strategic Variables</h3>
+    <ul>
+      <li><strong>Military Readiness</strong> — material preparedness for war (air defence, military technology, staff planning etc.).</li>
+      <li><strong>Public Support for Firmness</strong> — willingness of the public to endure confrontation and to support a war effort to uphold security commitments.</li>
+      <li><strong>Public Support for Government</strong> — legitimacy and governing mandate; if this collapses, you cannot act.</li>
+      <li><strong>Unity with Allies</strong> — cohesion with France and other international partners.</li>
+      <li><strong>Security of Czechoslovakia</strong> — strength and viability of Czech defence and resistance.</li>
+    </ul>
+
+    <p>
+Try to maintain the most optimal balance that will navigate Britain through the testy inter-war period!
+    </p>
+
+    <button id="closeTutorialBtn">Begin Simulation</button>
+  </div>
+</div>
 </body>
 </html>
