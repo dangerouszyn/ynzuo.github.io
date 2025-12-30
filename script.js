@@ -71,25 +71,6 @@ function applyPostEndingConsequences(endingId, stats) {
   return stats;
 }
 
-let llm;
-let llmReady = false;
-let llmError = null;
-
-async function initLocalLLM() {
-  try {
-    const modelId = "Phi-3-mini-4k-instruct-q4f16_1-MLC";  // much smaller, faster
-    console.time("LLM init");
-    llm = await webllm.CreateMLCEngine(modelId, {
-      gpu_memory_utilization: 0.85
-    });
-    console.timeEnd("LLM init");
-    llmReady = true;
-  } catch (err) {
-    console.error("LLM failed to initialise:", err);
-    llmError = err;
-  }
-}
-
 
 function calculateDeterrenceProbability(stats) {
   let score =
@@ -111,38 +92,6 @@ function calculateWarWinProbability(stats) {
       stats.czech     * 0.4;
 
   return Math.max(0, Math.min(100, Math.round(scoretwo)));
-}
-
-// === AI Ending Generator (Local LLM) ===
-async function generateEndingLocalAI(history, prob, prob2, stats, endingId) {
-  const prompt =
-`You are generating an alternate-history analysis.
-
-Ending type: ${endingId}
-
-Player choice log:
-${history.map(h => "- " + h.choiceText + " (" + h.nodeTitle + ")").join("\n")}
-
-Deterrence probability: ${prob}%
-War victory probability: ${prob2}%
-
-Final state:
-${JSON.stringify(stats, null, 2)}
-
-Write 3–4 paragraphs of historically grounded narrative that logically explains:
-- how these decisions shaped diplomacy,
-- whether Hitler was deterred,
-- likely outcomes if war occurs,
-- strategic implications for Britain, France, and Czechoslovakia.`;
-
-  const output = await llm.chat.completions.create({
-    messages: [
-      { role: "user", content: prompt }
-    ],
-    stream: false
-  });
-
-  return output.choices[0].message.content;
 }
 
 // Decision nodes [structured representation of events and options]
@@ -810,16 +759,15 @@ if (gameState.currentNodeId === "ussr_conditional_1938") {
   });
 
 if (node.isEnding) {
-    cardEl.classList.add("ending");
+  cardEl.classList.add("ending");
 
-    applyPostEndingConsequences(node.id, gameState.stats);
-    renderStats();
+  applyPostEndingConsequences(node.id, gameState.stats);
+  renderStats();
 
-    const prob = calculateDeterrenceProbability(gameState.stats);
-    const prob2 = calculateWarWinProbability(gameState.stats);
-    const history = gameState.history;
-
-if (!llmReady || llmError) {
+  const prob = calculateDeterrenceProbability(gameState.stats);
+  const prob2 = calculateWarWinProbability(gameState.stats);
+  const history = gameState.history;
+  
   // Construct a full offline prompt
   const manualPrompt = `
 You are generating an analysis of British crisis decision-making in 1937–1938. 
@@ -895,7 +843,7 @@ Write 3–4 paragraphs of historically grounded alternate-history analysis that:
 4. If war occurs, evaluates the likely military balance and coalition prospects.
 5. Discusses the implications for Czechoslovakia, France, Soviet diplomacy (if applicable), and long-term European stability.
 6. Uses the tone and analytical style of a professional historian war-gaming counterfactuals.
-7. Indicators are, respectively in sequence, Military Readiness, Public Support for Firmness, Public Support for Government, Unity with Allies (France & Others). All are out of a maximum of 100.
+7. Indicators are, respectively in sequence, Military Readiness, Public Support for Firmness, Public Support for Government, Unity with Allies (France & Others) and Security of Czechoslovakia. All are out of a maximum of 100.
 8. Comment on the very start how closely aligned the players' choices are to historical Chamberlain's decisions.
 9. In every instance, also qualify at the end the circumstances Chamberlain faced and hindsights that Chamberlain could not have known, like grossly misleading intelligence reports vastly exaggerating German power in 1938, inability to accurately assess Soviet intentions, mis-characterisation of Hitler as a leader with only limited revisionist aims and so on, such that the historical Chamberlain could not have easily chosen the "better" paths and instead went down what occurred historically.
   `.trim();
@@ -945,46 +893,6 @@ Write 3–4 paragraphs of historically grounded alternate-history analysis that:
   return;
 }
 
-
-    // If ready, show loading text and call AI
-    choiceContainer.innerHTML = `
-      <div class="ending-title">Simulation Complete</div>
-      <p>Generating personalised alternate-history analysis…</p>
-    `;
-
-console.time("AI ending generation");
-const aiNarrative = await generateEndingLocalAI(
-  history, prob, prob2, gameState.stats, node.id
-);
-console.timeEnd("AI ending generation");
-
-
-    choiceContainer.innerHTML = `
-      <div class="ending-title">Simulation Complete</div>
-
-      <div class="ending-narrative">
-        ${aiNarrative}
-      </div>
-
-      <p style="font-size:0.9rem; margin-top:8px; color:#fde68a;">
-        Estimated deterrence probability:
-        <strong>${prob}%</strong>
-      </p>
-
-      <p style="font-size:0.9rem; margin-top:8px; color:#fde68a;">
-        Estimated war victory probability:
-        <strong>${prob2}%</strong>
-      </p>
-
-      <button id="ending-restart" class="restart-btn" style="margin-top:10px;">
-        Run the Scenario Again
-      </button>
-    `;
-
-    document.getElementById("ending-restart")
-      .addEventListener("click", () => restartGame());
-    return;
-}
 
 
 
@@ -1074,9 +982,6 @@ function restartGame() {
 
 // Initialise when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
-  
-    // Load the local LLM model into the browser
-  initLocalLLM();
 
   const restartBtn = document.getElementById("restart-btn");
 restartBtn.addEventListener("click", () => {
